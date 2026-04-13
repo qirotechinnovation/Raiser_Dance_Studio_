@@ -1,0 +1,373 @@
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, ScrollView, StatusBar, Modal, Platform } from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import adminService from "../../api/adminService";
+import Colors from "../../theme/Colors";
+import BaseScreen from "../../components/BaseScreen";
+
+export default function FeeManagementScreen({ navigation }) {
+    const [activeTab, setActiveTab] = useState("Pending");
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({ collected: "0", outstanding: "0", pendingCount: 0 });
+    const [records, setRecords] = useState([]);
+    const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+    const [selectedFeeId, setSelectedFeeId] = useState(null);
+    const [paymentMode, setPaymentMode] = useState("GPAY");
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchFeeData();
+        });
+        return unsubscribe;
+    }, [navigation, activeTab]);
+
+    useEffect(() => {
+        fetchFeeData();
+    }, [activeTab]);
+
+    const fetchFeeData = async () => {
+        setLoading(true);
+        try {
+            const [pendingRes, allRes] = await Promise.all([
+                adminService.getPendingFees(),
+                adminService.getAllFees()
+            ]);
+
+            const today = new Date();
+            const totalCollected = allRes.data
+                .filter(f => f.status === 'PAID')
+                .reduce((sum, f) => sum + (f.amount || 0), 0);
+
+            // Current dues: Unpaid fees that are due today or in the past
+            const currentDues = pendingRes.data.filter(f => 
+                f.status?.toUpperCase() !== 'PAID' && 
+                (!f.dueDate || new Date(f.dueDate) <= today)
+            );
+            const totalOutstanding = currentDues.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+            setStats({
+                collected: totalCollected,
+                outstanding: totalOutstanding,
+                pendingCount: currentDues.length
+            });
+
+            // Store records based on active tab
+            let sourceData = [];
+            if (activeTab.startsWith("Pending")) {
+                sourceData = currentDues; 
+            } else if (activeTab === "History") {
+                sourceData = allRes.data.filter(f => f.status === 'PAID');
+            } else {
+                sourceData = allRes.data;
+            }
+
+            setRecords(sourceData);
+
+        } catch (error) {
+            console.error("Error fetching fee data", error);
+            Alert.alert("Error", "Could not load fee information");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMarkPaid = (feeId) => {
+        setSelectedFeeId(feeId);
+        setPaymentModalVisible(true);
+    };
+
+    const submitPayment = async () => {
+        setLoading(true);
+        try {
+            await adminService.markFeePaid(selectedFeeId, paymentMode, "", "Mobile Admin Entry");
+            setPaymentModalVisible(false);
+            fetchFeeData(); 
+            Alert.alert("Success", "Payment recorded successfully");
+        } catch (e) {
+            Alert.alert("Error", "Failed to update payment");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteFee = (id) => {
+        Alert.alert("Confirm Delete", "Are you sure you want to remove this fee record?", [
+            { text: "Cancel" },
+            {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                    try {
+                        await adminService.deleteFee(id);
+                        fetchFeeData();
+                    } catch (e) {
+                        Alert.alert("Error", "Delete failed");
+                    }
+                }
+            }
+        ]);
+    };
+
+    const renderSummaryCard = (title, amount, subtext, isPositive) => (
+        <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>{title}</Text>
+            <Text style={styles.summaryAmount}>₹{Number(amount).toLocaleString()}</Text>
+            <View style={styles.summarySubrow}>
+                {isPositive ? (
+                    <Icon name="trending-up" size={14} color="#10B981" />
+                ) : (
+                    <Icon name="alert-circle-outline" size={14} color="#F59E0B" />
+                )}
+                <Text style={[styles.summarySubtext, { color: isPositive ? "#10B981" : "#F59E0B" }]}>
+                    {subtext}
+                </Text>
+            </View>
+        </View>
+    );
+
+    const renderFeeRecord = ({ item }) => {
+        const isPaid = item.status?.toUpperCase() === 'PAID';
+        const displayStatus = isPaid ? `PAID ${item.paidDate || ''}` : `DUE ${item.dueDate || 'Soon'}`;
+
+        return (
+            <View style={styles.feeRecordCard}>
+                <View style={styles.recordHeader}>
+                    <View style={styles.avatarPlaceholder}>
+                        <Icon name="account" size={24} color={Colors.TEXT_MUTED} />
+                    </View>
+                    <View style={styles.recordMainInfo}>
+                        <Text style={styles.studentName}>{item.student?.name || 'Unknown'}</Text>
+                        <Text style={styles.planSubtitle}>{item.plan} • {displayStatus}</Text>
+                    </View>
+                    <View style={styles.priceContainer}>
+                        <Text style={styles.recordPrice}>₹{item.amount}</Text>
+                    </View>
+                </View>
+
+                {isPaid && (
+                    <View style={styles.paidRow}>
+                        <View style={styles.checkCircle}>
+                            <Icon name="check" size={12} color="#10B981" />
+                        </View>
+                        <Text style={styles.paidInfo}>Paid on {item.paidDate || ''}</Text>
+                    </View>
+                )}
+
+                <View style={styles.recordActions}>
+                    {!isPaid ? (
+                        <TouchableOpacity
+                            style={styles.reminderBtn}
+                            onPress={() => Alert.alert("Send Reminder", `Send payment reminder to ${item.student?.name}?`, [
+                                { text: "Cancel" },
+                                {
+                                    text: "Send", onPress: async () => {
+                                        try {
+                                            await adminService.sendFeeReminder(item.id);
+                                            Alert.alert("Success", "Reminder sent!");
+                                        } catch (e) { Alert.alert("Error", "Failed to send."); }
+                                    }
+                                }
+                            ])}
+                        >
+                            <Icon name="bell-ring" size={16} color={Colors.WHITE} style={styles.btnIcon} />
+                            <Text style={styles.reminderBtnText}>Remind</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={{ flex: 1 }} />
+                    )}
+
+                    {!isPaid && (
+                        <TouchableOpacity
+                            style={[styles.moreBtn, { backgroundColor: '#DCFCE7', width: 'auto', paddingHorizontal: 15 }]}
+                            onPress={() => handleMarkPaid(item.id)}
+                        >
+                            <Text style={{ color: '#166534', fontWeight: 'bold' }}>Pay</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                        style={styles.moreBtn}
+                        onPress={() => navigation.navigate('AddEditFee', { fee: item })}
+                    >
+                        <Icon name="pencil-outline" size={20} color={Colors.TEXT_SECONDARY} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.moreBtn}
+                        onPress={() => handleDeleteFee(item.id)}
+                    >
+                        <Icon name="delete-outline" size={20} color="#E11D48" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
+    return (
+        <BaseScreen 
+            title="Fees" 
+            actions={[{ icon: 'plus', onPress: () => navigation.navigate('AddEditFee'), color: Colors.PRIMARY, size: 30 }]}
+        >
+            <View style={styles.summaryRow}>
+                {renderSummaryCard("Collected", stats.collected, "+12% vs last month", true)}
+                {renderSummaryCard("Outstanding", stats.outstanding, `${stats.pendingCount} Pending dues`, false)}
+            </View>
+
+            <View style={styles.tabsContainer}>
+                {["All", "Pending", "History"].map(mode => {
+                    const label = mode === "Pending" ? `Pending (${stats.pendingCount})` : mode;
+                    const isActive = activeTab.startsWith(mode);
+                    return (
+                        <TouchableOpacity
+                            key={mode}
+                            style={[styles.tab, isActive && styles.activeTab]}
+                            onPress={() => setActiveTab(label)}
+                        >
+                            <Text style={[styles.tabText, isActive && styles.activeTabText]}>{label}</Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+
+            <View style={styles.listContainer}>
+                {loading ? (
+                    <ActivityIndicator size="small" color={Colors.PRIMARY} style={{ marginTop: 20 }} />
+                ) : (
+                    <FlatList
+                        data={records}
+                        renderItem={renderFeeRecord}
+                        keyExtractor={(item) => item.id.toString()}
+                        scrollEnabled={false}
+                        ListEmptyComponent={
+                            <Text style={{ textAlign: 'center', marginTop: 20, color: Colors.TEXT_MUTED }}>No records found</Text>
+                        }
+                    />
+                )}
+            </View>
+
+            <Modal visible={paymentModalVisible} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Mark Payment</Text>
+                        <Text style={styles.modalLabel}>Select Payment Mode</Text>
+                        <View style={styles.paymentOptions}>
+                            {['GPAY', 'CASH', 'PHONEPE', 'BANK'].map(mode => (
+                                <TouchableOpacity
+                                    key={mode}
+                                    style={[styles.payOption, paymentMode === mode && styles.payOptionActive]}
+                                    onPress={() => setPaymentMode(mode)}
+                                >
+                                    <Text style={[styles.payOptionText, paymentMode === mode && styles.payOptionTextActive]}>{mode}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <View style={styles.modalBtns}>
+                            <TouchableOpacity style={styles.cancelBtn} onPress={() => setPaymentModalVisible(false)}>
+                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.confirmBtn} onPress={submitPayment}>
+                                <Text style={styles.confirmBtnText}>Confirm</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </BaseScreen>
+    );
+}
+
+const styles = StyleSheet.create({
+    summaryRow: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, marginTop: 15 },
+    summaryCard: {
+        width: "47%",
+        backgroundColor: Colors.WHITE,
+        borderRadius: 25,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: "#FCE7F3",
+        elevation: 3,
+        shadowColor: Colors.PRIMARY,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+    },
+    summaryTitle: { fontSize: 13, color: Colors.TEXT_SECONDARY, fontWeight: "600" },
+    summaryAmount: { fontSize: 24, fontWeight: "bold", color: Colors.TEXT_PRIMARY, marginVertical: 6 },
+    summarySubrow: { flexDirection: "row", alignItems: "center" },
+    summarySubtext: { fontSize: 11, fontWeight: "600", marginLeft: 4 },
+    tabsContainer: {
+        flexDirection: "row",
+        paddingHorizontal: 20,
+        marginTop: 35,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F1F5F9"
+    },
+    tab: {
+        paddingVertical: 12,
+        marginRight: 25,
+        borderBottomWidth: 3,
+        borderBottomColor: "transparent"
+    },
+    activeTab: { borderBottomColor: Colors.PRIMARY },
+    tabText: { fontSize: 15, fontWeight: "700", color: Colors.TEXT_MUTED },
+    activeTabText: { color: Colors.PRIMARY },
+    listContainer: { padding: 20 },
+    feeRecordCard: {
+        backgroundColor: Colors.WHITE,
+        borderRadius: 24,
+        padding: 18,
+        marginBottom: 15,
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.BG_CONTENT,
+        position: 'relative'
+    },
+    recordHeader: { flexDirection: "row", alignItems: "center" },
+    avatarPlaceholder: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#F1F5F9", justifyContent: "center", alignItems: "center" },
+    recordMainInfo: { flex: 1, marginLeft: 15 },
+    studentName: { fontSize: 16, fontWeight: "bold", color: "#000" },
+    planSubtitle: { fontSize: 13, color: Colors.TEXT_SECONDARY, marginTop: 2 },
+    priceContainer: { alignItems: "flex-end" },
+    recordPrice: { fontSize: 16, fontWeight: "bold", color: Colors.PRIMARY },
+    recordActions: { flexDirection: "row", marginTop: 15, alignItems: "center" },
+    reminderBtn: {
+        flex: 1,
+        height: 48,
+        backgroundColor: Colors.PRIMARY,
+        borderRadius: 16,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    reminderBtnText: { color: Colors.WHITE, fontWeight: "bold", fontSize: 14 },
+    btnIcon: { marginRight: 8 },
+    moreBtn: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: "#F1F5F9",
+        justifyContent: "center",
+        alignItems: "center",
+        marginLeft: 10
+    },
+    paidRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+    checkCircle: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#DCFCE7", justifyContent: "center", alignItems: "center", marginRight: 12 },
+    paidInfo: { fontSize: 13, color: Colors.TEXT_SECONDARY, flex: 1, fontWeight: "500" },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { width: '85%', backgroundColor: Colors.WHITE, borderRadius: 25, padding: 25 },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.TEXT_PRIMARY, marginBottom: 20 },
+    modalLabel: { fontSize: 14, color: Colors.TEXT_SECONDARY, marginBottom: 15 },
+    paymentOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 25 },
+    payOption: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.BORDER },
+    payOptionActive: { backgroundColor: Colors.PRIMARY, borderColor: Colors.PRIMARY },
+    payOptionText: { fontSize: 14, fontWeight: '600', color: Colors.TEXT_SECONDARY },
+    payOptionTextActive: { color: Colors.WHITE },
+    modalBtns: { flexDirection: 'row', gap: 15 },
+    cancelBtn: { flex: 1, paddingVertical: 15, alignItems: 'center' },
+    confirmBtn: { flex: 1, paddingVertical: 15, backgroundColor: Colors.PRIMARY, borderRadius: 15, alignItems: 'center' },
+    cancelBtnText: { color: Colors.TEXT_SECONDARY, fontWeight: 'bold' },
+    confirmBtnText: { color: Colors.WHITE, fontWeight: 'bold' },
+});

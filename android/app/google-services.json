@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "487816163922",
+    "project_id": "dance-studio-e3bc3",
+    "storage_bucket": "dance-studio-e3bc3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:487816163922:android:af4b72090f642f8721658b",
+        "android_client_info": {
+          "package_name": "com.raisers.dancestudio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC17ZFJxEy34fo9N_AdNZ99OQVfjrOqvrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

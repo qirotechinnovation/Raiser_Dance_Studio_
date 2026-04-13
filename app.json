@@ -1,0 +1,9 @@
+{
+  "name": "RaisersStudio",
+  "displayName": "Raisers Studio",
+  "extra": {
+    "eas": {
+      "projectId": "7a41f066-eaa1-4cfb-bed8-7297dc0113dc"
+    }
+  }
+}
