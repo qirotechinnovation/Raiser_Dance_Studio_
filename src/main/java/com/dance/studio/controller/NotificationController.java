@@ -17,10 +17,26 @@ public class NotificationController {
 
     private final NotificationRepository repo;
     private final StudentRepository studentRepo;
+    private final com.dance.studio.service.NotificationService notificationService;
 
-    public NotificationController(NotificationRepository repo, StudentRepository studentRepo) {
+    public NotificationController(NotificationRepository repo, StudentRepository studentRepo, com.dance.studio.service.NotificationService notificationService) {
         this.repo = repo;
         this.studentRepo = studentRepo;
+        this.notificationService = notificationService;
+    }
+
+    @GetMapping("/test-push")
+    public Map<String, String> testPush(@RequestParam String token) {
+        try {
+            notificationService.sendPush(token, "Test Push Notification", "This is a test notification from the Dance Studio Backend.");
+            Map<String, String> res = new HashMap<>();
+            res.put("status", "Sent push request to token");
+            return res;
+        } catch (Exception e) {
+            Map<String, String> res = new HashMap<>();
+            res.put("error", e.getMessage());
+            return res;
+        }
     }
 
     @GetMapping

@@ -23,6 +23,7 @@ public class Fee {
 	private String paymentMode;
 	private String remarks;
 	private LocalDate lastReminderSent;
+	private String receiptNo;
 
 	@ManyToOne
 	@JoinColumn(name = "student_id")
@@ -86,7 +87,7 @@ public class Fee {
 
 	public Fee(Long id, double amount, double discountPercent, String plan, String status, LocalDate dueDate,
 			LocalDate paidDate, Student student, String transactionId, String paymentMode, String remarks,
-			LocalDate lastReminderSent) {
+			LocalDate lastReminderSent, String receiptNo) {
 		super();
 		this.id = id;
 		this.amount = amount;
@@ -100,6 +101,7 @@ public class Fee {
 		this.paymentMode = paymentMode;
 		this.remarks = remarks;
 		this.lastReminderSent = lastReminderSent;
+		this.receiptNo = receiptNo;
 	}
 
 	public Fee() {
@@ -143,5 +145,13 @@ public class Fee {
 
 	public void setLastReminderSent(LocalDate lastReminderSent) {
 		this.lastReminderSent = lastReminderSent;
+	}
+
+	public String getReceiptNo() {
+		return receiptNo;
+	}
+
+	public void setReceiptNo(String receiptNo) {
+		this.receiptNo = receiptNo;
 	}
 }

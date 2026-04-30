@@ -148,6 +148,22 @@ public class AdminFeeController {
         fee.setTransactionId(transactionId);
         fee.setRemarks(remarks);
 
+        // ✅ Automatic Receipt Number Generation
+        String nextReceiptNo = "RDS-1001";
+        Fee lastFee = feeRepo.findTopByReceiptNoIsNotNullOrderByReceiptNoDesc();
+        if (lastFee != null && lastFee.getReceiptNo() != null) {
+            try {
+                String lastNo = lastFee.getReceiptNo();
+                if (lastNo.contains("-")) {
+                    int lastVal = Integer.parseInt(lastNo.split("-")[1]);
+                    nextReceiptNo = "RDS-" + (lastVal + 1);
+                }
+            } catch (Exception e) {
+                nextReceiptNo = "RDS-" + System.currentTimeMillis() / 10000;
+            }
+        }
+        fee.setReceiptNo(nextReceiptNo);
+
         Fee saved = feeRepo.save(fee);
 
         // Update Student's total outstanding balance
@@ -162,7 +178,7 @@ public class AdminFeeController {
             // Auto-generate next fee record as UNPAID
             Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
                     fee.getPlan(), "UNPAID", calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
-                    null, student, null, null, null, null);
+                    null, student, null, null, null, null, null);
             feeRepo.save(nextFee);
 
             // Mark old Fee Reminders as read

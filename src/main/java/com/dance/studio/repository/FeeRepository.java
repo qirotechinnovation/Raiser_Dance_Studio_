@@ -34,4 +34,6 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
 	List<Fee> findByStatusAndDueDateLessThanEqual(String string, LocalDate today);
 
 	List<Fee> findTop5ByStatusOrderByPaidDateDesc(String status);
+
+	Fee findTopByReceiptNoIsNotNullOrderByReceiptNoDesc();
 }
