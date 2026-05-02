@@ -31,39 +31,39 @@ public class AdminStudentController {
     @PostMapping
     @org.springframework.transaction.annotation.Transactional
     public Student add(@RequestBody Student s) {
-        // 1. Validate Email Uniqueness
-        if (s.getEmail() != null && userRepo.findByEmail(s.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already registered in system.");
-        }
-
-        // 2. Link Batch (handle null IDs from frontend)
+        // 1. Link Batch (handle null IDs from frontend)
         if (s.getBatch() != null && s.getBatch().getId() != null) {
             batchRepo.findById(s.getBatch().getId()).ifPresentOrElse(s::setBatch, () -> s.setBatch(null));
         } else {
             s.setBatch(null);
         }
 
-        // 3. Link DanceType
+        // 2. Link DanceType
         if (s.getDanceType() != null && s.getDanceType().getId() != null) {
             danceRepo.findById(s.getDanceType().getId()).ifPresentOrElse(s::setDanceType, () -> s.setDanceType(null));
         } else {
             s.setDanceType(null);
         }
 
-        // 4. Default Password if missing
+        // 3. Default Password if missing
         if (s.getPassword() == null || s.getPassword().trim().isEmpty()) {
             s.setPassword("password123");
         }
 
-        // 5. Create User Record (for login)
-        com.dance.studio.model.User user = new com.dance.studio.model.User();
-        user.setEmail(s.getEmail());
-        user.setUsername(s.getEmail());
-        user.setPassword(s.getPassword());
-        user.setRole(com.dance.studio.model.Role.STUDENT);
-        userRepo.save(user);
+        // 4. Create/Verify User Record (for login)
+        // If user already exists, we don't create a new login, just link this student to the existing login.
+        if (s.getEmail() != null && !s.getEmail().trim().isEmpty()) {
+            if (userRepo.findByEmail(s.getEmail()).isEmpty()) {
+                com.dance.studio.model.User user = new com.dance.studio.model.User();
+                user.setEmail(s.getEmail());
+                user.setUsername(s.getEmail());
+                user.setPassword(s.getPassword());
+                user.setRole(com.dance.studio.model.Role.STUDENT);
+                userRepo.save(user);
+            }
+        }
 
-        // 6. Save Student
+        // 5. Save Student
         return repo.save(s);
     }
 

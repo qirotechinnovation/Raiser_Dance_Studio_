@@ -4,6 +4,11 @@ import com.dance.studio.model.Role;
 import com.dance.studio.model.User;
 import com.dance.studio.service.UserService;
 import org.springframework.web.bind.annotation.*;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import java.util.Collections;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,6 +81,80 @@ public class AuthController {
                     response.put("adminId", admin.getId());
                 });
             }
+        }
+
+        return response;
+    }
+
+    // 🌐 GOOGLE LOGIN
+    @PostMapping("/google-login")
+    public Map<String, Object> googleLogin(@RequestBody Map<String, String> payload) {
+        String idTokenString = payload.get("idToken");
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String email;
+            String name;
+
+            if ("MOCK_TOKEN_V3".equals(idTokenString)) {
+                // Mock User for Testing
+                email = "mock_student@example.com";
+                name = "Mock Student User";
+            } else {
+                GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                        .setAudience(Collections.singletonList("454650440475-11fjcpj5obrphjtv9sf05bfjegfciamm.apps.googleusercontent.com"))
+                        .build();
+
+                GoogleIdToken idToken = verifier.verify(idTokenString);
+                if (idToken == null) {
+                    response.put("success", false);
+                    response.put("message", "Invalid Google ID Token");
+                    return response;
+                }
+                GoogleIdToken.Payload idPayload = idToken.getPayload();
+                email = idPayload.getEmail();
+                name = (String) idPayload.get("name");
+            }
+
+            // 1. Check if user exists
+            User user = userRepo.findByEmail(email).orElse(null);
+            if (user == null) {
+                // Create new Student User
+                user = new User();
+                user.setUsername(email);
+                user.setEmail(email);
+                user.setPassword("GOOGLE_AUTH_USER"); // Placeholder
+                user.setRole(Role.STUDENT);
+                user = userService.save(user);
+
+                // Create Student Profile
+                com.dance.studio.model.Student student = new com.dance.studio.model.Student();
+                student.setName(name);
+                student.setEmail(email);
+                student.setActive(true);
+                student.setJoiningDate(java.time.LocalDate.now());
+                studentRepo.save(student);
+            }
+
+            // 2. Prepare Login Response
+            response.put("success", true);
+            response.put("user", user);
+            response.put("role", user.getRole());
+            response.put("token", "google-session-" + System.currentTimeMillis());
+
+            if (user.getRole() == Role.STUDENT) {
+                java.util.List<com.dance.studio.model.Student> students = studentRepo.findByEmail(email);
+                if (!students.isEmpty()) {
+                    response.put("studentId", students.get(0).getId());
+                    response.put("feeStatus", students.get(0).getRegistrationFeeStatus());
+                }
+            } else if (user.getRole() == Role.ADMIN) {
+                adminRepo.findByEmail(email).ifPresent(a -> response.put("adminId", a.getId()));
+            }
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Google login failed: " + e.getMessage());
         }
 
         return response;
