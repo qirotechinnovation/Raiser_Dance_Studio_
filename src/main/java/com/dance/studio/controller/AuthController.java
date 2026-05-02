@@ -47,13 +47,13 @@ public class AuthController {
         } else {
             response.put("success", true);
             response.put("user", user);
-            response.put("role", user.getRole()); // ADMIN or STUDENT
+            response.put("role", user.getRole()); // ADMIN or
             response.put("message", "Login successful");
 
             // IF Student, find Student Entity ID
             if (user.getRole() == Role.STUDENT) {
                 java.util.List<com.dance.studio.model.Student> students = studentRepo.findByEmail(email);
-                
+
                 if (students.size() > 1) {
                     response.put("multipleProfiles", true);
                     response.put("profiles", students);
@@ -137,7 +137,7 @@ public class AuthController {
 
             // 1. Check if user already exists
             User user = userRepo.findByEmail(email).orElse(null);
-            
+
             if (user == null) {
                 // Create new User
                 user = new User(null, email, password, Role.STUDENT);
@@ -145,7 +145,8 @@ public class AuthController {
                 user.setUsername(email);
                 user = userService.save(user);
             } else {
-                // User exists, but check if this student name is already registered under this email
+                // User exists, but check if this student name is already registered under this
+                // email
                 java.util.List<com.dance.studio.model.Student> existingStudents = studentRepo.findByEmail(email);
                 boolean alreadyExists = existingStudents.stream().anyMatch(s -> s.getName().equalsIgnoreCase(name));
                 if (alreadyExists) {
