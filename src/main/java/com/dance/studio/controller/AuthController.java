@@ -52,9 +52,14 @@ public class AuthController {
 
             // IF Student, find Student Entity ID
             if (user.getRole() == Role.STUDENT) {
-                java.util.Optional<com.dance.studio.model.Student> studentOpt = studentRepo.findByEmail(email);
-                if (studentOpt.isPresent()) {
-                    com.dance.studio.model.Student student = studentOpt.get();
+                java.util.List<com.dance.studio.model.Student> students = studentRepo.findByEmail(email);
+                
+                if (students.size() > 1) {
+                    response.put("multipleProfiles", true);
+                    response.put("profiles", students);
+                    return response;
+                } else if (!students.isEmpty()) {
+                    com.dance.studio.model.Student student = students.get(0);
                     // Check active status
                     if (!student.isActive()) {
                         response.put("success", false);
@@ -130,23 +135,27 @@ public class AuthController {
             String parentMobile = (String) payload.get("parentMobile");
             Integer age = payload.get("age") != null ? ((Number) payload.get("age")).intValue() : 0;
 
-            // 1. Check if exists
-            if (userRepo.findByEmail(email).isPresent()) {
-                response.put("success", false);
-                response.put("message", "Email already registered");
-                return response;
+            // 1. Check if user already exists
+            User user = userRepo.findByEmail(email).orElse(null);
+            
+            if (user == null) {
+                // Create new User
+                user = new User(null, email, password, Role.STUDENT);
+                user.setEmail(email);
+                user.setUsername(email);
+                user = userService.save(user);
+            } else {
+                // User exists, but check if this student name is already registered under this email
+                java.util.List<com.dance.studio.model.Student> existingStudents = studentRepo.findByEmail(email);
+                boolean alreadyExists = existingStudents.stream().anyMatch(s -> s.getName().equalsIgnoreCase(name));
+                if (alreadyExists) {
+                    response.put("success", false);
+                    response.put("message", "This student name is already registered with this email.");
+                    return response;
+                }
+                // If user exists, we allow adding another student profile (account)
             }
-
-            // 2. Create User (Auth)
-            User user = new User(null, name, password, Role.STUDENT); // username = name ??
-            user.setEmail(email);
-            // Unique username check might fail if names are duplicate.
-            // Better to use email as username or random.
-            // For now, let's use email as username or just name if system allows.
-            // User.java has username unique.
-            user.setUsername(email);
-
-            User savedUser = userService.save(user);
+            User savedUser = user;
 
             // 3. Create Student (Profile)
             com.dance.studio.model.Student student = new com.dance.studio.model.Student();
@@ -197,7 +206,7 @@ public class AuthController {
             userService.save(user);
 
             // Sync with profile if it exists
-            studentRepo.findByEmail(email).ifPresent(s -> {
+            studentRepo.findByEmail(email).forEach(s -> {
                 s.setPassword(newPassword);
                 studentRepo.save(s);
             });
@@ -254,7 +263,10 @@ public class AuthController {
             notif.setMessage(message != null ? message : "Request for activation");
             notif.setTimestamp(java.time.LocalDateTime.now());
 
-            studentRepo.findByEmail(email).ifPresent(notif::setStudent);
+            java.util.List<com.dance.studio.model.Student> students = studentRepo.findByEmail(email);
+            if (!students.isEmpty()) {
+                notif.setStudent(students.get(0)); // Associate with the first one for now
+            }
             notificationRepo.save(notif);
 
             System.out.println("Timestamp: " + java.time.LocalDateTime.now());

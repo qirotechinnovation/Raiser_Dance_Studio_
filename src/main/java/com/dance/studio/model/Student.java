@@ -13,7 +13,6 @@ public class Student {
     private String name;
     private int age;
 
-    @Column(unique = true)
     private String email; // ✅ NEW
 
     private String password; // ✅ NEW

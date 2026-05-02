@@ -39,6 +39,9 @@ public class AdminFeeController {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
         fee.setStudent(student);
+        if (fee.getBatchName() == null && student.getBatch() != null) {
+            fee.setBatchName(student.getBatch().getName());
+        }
         if (fee.getStatus() == null)
             fee.setStatus("UNPAID");
 
@@ -177,8 +180,9 @@ public class AdminFeeController {
 
             // Auto-generate next fee record as UNPAID
             Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
-                    fee.getPlan(), "UNPAID", calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
+                    fee.getPlan(), "UNPAID", fee.getFeeType(), fee.getFeeMonth(), calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
                     null, student, null, null, null, null, null);
+            nextFee.setBatchName(fee.getBatchName());
             feeRepo.save(nextFee);
 
             // Mark old Fee Reminders as read

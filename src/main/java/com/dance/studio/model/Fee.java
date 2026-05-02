@@ -15,6 +15,9 @@ public class Fee {
 	private double discountPercent;
 	private String plan;
 	private String status;
+	private String feeType; // ADMISSION or MONTHLY
+	private String feeMonth; // e.g. "January 2024"
+	private String batchName; // ✅ NEW
 
 	private LocalDate dueDate;
 	private LocalDate paidDate;
@@ -85,7 +88,7 @@ public class Fee {
 		return student;
 	}
 
-	public Fee(Long id, double amount, double discountPercent, String plan, String status, LocalDate dueDate,
+	public Fee(Long id, double amount, double discountPercent, String plan, String status, String feeType, String feeMonth, LocalDate dueDate,
 			LocalDate paidDate, Student student, String transactionId, String paymentMode, String remarks,
 			LocalDate lastReminderSent, String receiptNo) {
 		super();
@@ -94,6 +97,8 @@ public class Fee {
 		this.discountPercent = discountPercent;
 		this.plan = plan;
 		this.status = status;
+		this.feeType = feeType;
+		this.feeMonth = feeMonth;
 		this.dueDate = dueDate;
 		this.paidDate = paidDate;
 		this.student = student;
@@ -153,5 +158,29 @@ public class Fee {
 
 	public void setReceiptNo(String receiptNo) {
 		this.receiptNo = receiptNo;
+	}
+
+	public String getFeeType() {
+		return feeType;
+	}
+
+	public void setFeeType(String feeType) {
+		this.feeType = feeType;
+	}
+
+	public String getFeeMonth() {
+		return feeMonth;
+	}
+
+	public void setFeeMonth(String feeMonth) {
+		this.feeMonth = feeMonth;
+	}
+
+	public String getBatchName() {
+		return batchName;
+	}
+
+	public void setBatchName(String batchName) {
+		this.batchName = batchName;
 	}
 }
