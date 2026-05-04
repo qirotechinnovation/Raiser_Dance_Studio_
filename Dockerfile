@@ -19,10 +19,10 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Copy the built WAR from the build stage
+# Copy the built JAR from the build stage
 # The path is relative to the WORKDIR in the build stage
-COPY --from=build /app/target/studio-0.0.1-SNAPSHOT.war app.war
+COPY --from=build /app/target/studio-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.war"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
