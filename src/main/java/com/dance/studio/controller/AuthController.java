@@ -39,30 +39,79 @@ public class AuthController {
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String, String> credentials) {
 
-        String email = credentials.get("email");
+        String identifier = credentials.get("email"); // Can be email or mobile
         String password = credentials.get("password");
 
         Map<String, Object> response = new HashMap<>();
 
-        User user = userService.login(email, password);
+        // 1. Try account-level login (User table)
+        User user = userService.login(identifier, password);
+        
+        // If account login fails, check if identifier matches student passwords
+        if (user == null) {
+            java.util.List<com.dance.studio.model.Student> studentsByPass = studentRepo.findByEmailOrParentMobile(identifier, identifier);
+            // Filter by password
+            java.util.List<com.dance.studio.model.Student> matchingStudents = studentsByPass.stream()
+                    .filter(s -> s.getPassword() != null && s.getPassword().equals(password))
+                    .toList();
+
+            if (!matchingStudents.isEmpty()) {
+                // Found a profile matching this password!
+                com.dance.studio.model.Student student = matchingStudents.get(0);
+                
+                // We still need the User object for the response (if it exists)
+                user = userRepo.findByEmail(student.getEmail()).orElse(null);
+                
+                if (user == null) {
+                    // Fallback: search by username if email search failed
+                    user = userRepo.findByUsername(student.getEmail()).orElse(null);
+                }
+
+                if (user != null) {
+                    response.put("success", true);
+                    response.put("user", user);
+                    response.put("role", Role.STUDENT);
+                    response.put("studentId", student.getId());
+                    response.put("feeStatus", student.getRegistrationFeeStatus());
+                    response.put("message", "Profile login successful");
+                    return response;
+                }
+            }
+        }
 
         if (user == null) {
             response.put("success", false);
-            response.put("message", "Invalid email or password");
+            response.put("message", "Invalid email/mobile or password");
         } else {
             response.put("success", true);
             response.put("user", user);
-            response.put("role", user.getRole()); // ADMIN or
+            response.put("role", user.getRole()); // ADMIN or STUDENT
             response.put("message", "Login successful");
 
             // IF Student, find Student Entity ID
             if (user.getRole() == Role.STUDENT) {
-                java.util.List<com.dance.studio.model.Student> students = studentRepo.findByEmail(email);
-
+                java.util.List<com.dance.studio.model.Student> students = studentRepo.findByEmailOrParentMobile(user.getEmail(), user.getEmail());
+                
                 if (students.size() > 1) {
-                    response.put("multipleProfiles", true);
-                    response.put("profiles", students);
-                    return response;
+                    // Multiple profiles found - check if one matches the password exactly
+                    java.util.List<com.dance.studio.model.Student> specificMatches = students.stream()
+                            .filter(s -> s.getPassword() != null && s.getPassword().equals(password))
+                            .toList();
+                    
+                    if (specificMatches.size() == 1) {
+                        com.dance.studio.model.Student student = specificMatches.get(0);
+                        if (!student.isActive()) {
+                            response.put("success", false);
+                            response.put("message", "Account Inactive. Please contact Admin.");
+                            return response;
+                        }
+                        response.put("studentId", student.getId());
+                        response.put("feeStatus", student.getRegistrationFeeStatus());
+                    } else {
+                        response.put("multipleProfiles", true);
+                        response.put("profiles", students);
+                        return response;
+                    }
                 } else if (!students.isEmpty()) {
                     com.dance.studio.model.Student student = students.get(0);
                     // Check active status
@@ -77,7 +126,7 @@ public class AuthController {
                     response.put("feeStatus", student.getRegistrationFeeStatus()); // Send Status to frontend
                 }
             } else if (user.getRole() == Role.ADMIN) {
-                adminRepo.findByEmail(email).ifPresent(admin -> {
+                adminRepo.findByEmail(user.getEmail()).ifPresent(admin -> {
                     response.put("adminId", admin.getId());
                 });
             }
@@ -214,8 +263,11 @@ public class AuthController {
             String parentMobile = (String) payload.get("parentMobile");
             Integer age = payload.get("age") != null ? ((Number) payload.get("age")).intValue() : 0;
 
-            // 1. Check if user already exists
+            // 1. Check if user already exists (by email or mobile)
             User user = userRepo.findByEmail(email).orElse(null);
+            if (user == null && parentMobile != null) {
+                user = userRepo.findByUsername(parentMobile).orElse(null);
+            }
 
             if (user == null) {
                 // Create new User
@@ -224,16 +276,16 @@ public class AuthController {
                 user.setUsername(email);
                 user = userService.save(user);
             } else {
-                // User exists, but check if this student name is already registered under this
-                // email
-                java.util.List<com.dance.studio.model.Student> existingStudents = studentRepo.findByEmail(email);
+                // User exists, but check if this student name is already registered under this identity
+                java.util.List<com.dance.studio.model.Student> existingStudents = studentRepo.findByEmailOrParentMobile(email, parentMobile);
                 boolean alreadyExists = existingStudents.stream().anyMatch(s -> s.getName().equalsIgnoreCase(name));
                 if (alreadyExists) {
                     response.put("success", false);
-                    response.put("message", "This student name is already registered with this email.");
+                    response.put("message", "This student name is already registered in this family.");
                     return response;
                 }
                 // If user exists, we allow adding another student profile (account)
+                response.put("familyCreated", true);
             }
             User savedUser = user;
 
@@ -241,7 +293,7 @@ public class AuthController {
             com.dance.studio.model.Student student = new com.dance.studio.model.Student();
             student.setName(name);
             student.setEmail(email);
-            student.setPassword(password); // redundant but in model
+            student.setPassword(password); // Profile-specific password
             student.setAge(age);
             student.setParentMobile(parentMobile);
             student.setAddress((String) payload.get("address"));
@@ -259,7 +311,7 @@ public class AuthController {
 
             response.put("success", true);
             response.put("user", savedUser);
-            response.put("message", "Student registered successfully");
+            response.put("message", response.containsKey("familyCreated") ? "Student added to family successfully" : "Student registered successfully");
         } catch (Exception e) {
             e.printStackTrace();
             response.put("success", false);

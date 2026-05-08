@@ -6,6 +6,8 @@ import com.dance.studio.model.Student;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
     java.util.List<Student> findByEmail(String email);
+    java.util.List<Student> findByParentMobile(String parentMobile);
+    java.util.List<Student> findByEmailOrParentMobile(String email, String parentMobile);
 
     java.util.List<Student> findTop5ByOrderByJoiningDateDesc();
 

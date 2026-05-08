@@ -31,36 +31,47 @@ public class AdminStudentController {
     @PostMapping
     @org.springframework.transaction.annotation.Transactional
     public Student add(@RequestBody Student s) {
-        // 1. Link Batch (handle null IDs from frontend)
+        // 1. Check if user already exists (by email or mobile)
+        com.dance.studio.model.User user = userRepo.findByEmail(s.getEmail()).orElse(null);
+        if (user == null && s.getParentMobile() != null) {
+            user = userRepo.findByUsername(s.getParentMobile()).orElse(null);
+        }
+
+        if (user == null) {
+            // Create new User Record (for login)
+            user = new com.dance.studio.model.User();
+            user.setEmail(s.getEmail());
+            user.setUsername(s.getEmail());
+            user.setPassword(s.getPassword());
+            user.setRole(com.dance.studio.model.Role.STUDENT);
+            userRepo.save(user);
+        } else {
+            // User exists, check if this student name is already registered under this identity
+            java.util.List<com.dance.studio.model.Student> existingStudents = repo.findByEmailOrParentMobile(s.getEmail(), s.getParentMobile());
+            boolean alreadyExists = existingStudents.stream().anyMatch(st -> st.getName().equalsIgnoreCase(s.getName()));
+            if (alreadyExists) {
+                throw new RuntimeException("This student name is already registered in this family.");
+            }
+            // If user exists, we allow adding another student profile (account)
+        }
+
+        // 2. Link Batch (handle null IDs from frontend)
         if (s.getBatch() != null && s.getBatch().getId() != null) {
             batchRepo.findById(s.getBatch().getId()).ifPresentOrElse(s::setBatch, () -> s.setBatch(null));
         } else {
             s.setBatch(null);
         }
 
-        // 2. Link DanceType
+        // 3. Link DanceType
         if (s.getDanceType() != null && s.getDanceType().getId() != null) {
             danceRepo.findById(s.getDanceType().getId()).ifPresentOrElse(s::setDanceType, () -> s.setDanceType(null));
         } else {
             s.setDanceType(null);
         }
 
-        // 3. Default Password if missing
+        // 4. Default Password if missing
         if (s.getPassword() == null || s.getPassword().trim().isEmpty()) {
             s.setPassword("password123");
-        }
-
-        // 4. Create/Verify User Record (for login)
-        // If user already exists, we don't create a new login, just link this student to the existing login.
-        if (s.getEmail() != null && !s.getEmail().trim().isEmpty()) {
-            if (userRepo.findByEmail(s.getEmail()).isEmpty()) {
-                com.dance.studio.model.User user = new com.dance.studio.model.User();
-                user.setEmail(s.getEmail());
-                user.setUsername(s.getEmail());
-                user.setPassword(s.getPassword());
-                user.setRole(com.dance.studio.model.Role.STUDENT);
-                userRepo.save(user);
-            }
         }
 
         // 5. Save Student
@@ -144,5 +155,10 @@ public class AdminStudentController {
     @GetMapping("/batch/{batchId}")
     public List<Student> getByBatch(@PathVariable Long batchId) {
         return repo.findByBatchId(batchId);
+    }
+
+    @GetMapping("/family")
+    public List<Student> getFamily(@RequestParam(required = false) String email, @RequestParam(required = false) String mobile) {
+        return repo.findByEmailOrParentMobile(email, mobile);
     }
 }
