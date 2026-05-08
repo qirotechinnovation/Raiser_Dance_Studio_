@@ -137,8 +137,19 @@ public class AdminStudentController {
     @org.springframework.transaction.annotation.Transactional
     public void delete(@PathVariable Long id) {
         repo.findById(id).ifPresent(s -> {
-            userRepo.findByEmail(s.getEmail()).ifPresent(userRepo::delete);
+            String email = s.getEmail();
+            String mobile = s.getParentMobile();
+            
             repo.delete(s);
+            
+            // Only delete User record if no other student is using this email or mobile
+            java.util.List<com.dance.studio.model.Student> remaining = repo.findByEmailOrParentMobile(email, mobile);
+            if (remaining.isEmpty()) {
+                userRepo.findByEmail(email).ifPresent(userRepo::delete);
+                if (mobile != null) {
+                    userRepo.findByUsername(mobile).ifPresent(userRepo::delete);
+                }
+            }
         });
     }
 
