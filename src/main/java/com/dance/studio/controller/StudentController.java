@@ -31,24 +31,36 @@ public class StudentController {
     @PostMapping
     @org.springframework.transaction.annotation.Transactional
     public Student addStudent(@RequestBody Student student) {
-        // 1. Default Password if missing
-        if (student.getPassword() == null || student.getPassword().trim().isEmpty()) {
-            student.setPassword("password123");
+        // 1. Check if user already exists (by email or mobile)
+        com.dance.studio.model.User user = userRepo.findByEmail(student.getEmail()).orElse(null);
+        if (user == null && student.getParentMobile() != null) {
+            user = userRepo.findByUsername(student.getParentMobile()).orElse(null);
         }
 
-        // 2. Create/Verify User Record (for login)
-        if (student.getEmail() != null && !student.getEmail().trim().isEmpty()) {
-            if (userRepo.findByEmail(student.getEmail()).isEmpty()) {
-                com.dance.studio.model.User user = new com.dance.studio.model.User();
-                user.setEmail(student.getEmail());
-                user.setUsername(student.getEmail());
-                user.setPassword(student.getPassword());
-                user.setRole(com.dance.studio.model.Role.STUDENT);
-                userRepo.save(user);
+        if (user == null) {
+            // 2. Default Password if missing
+            if (student.getPassword() == null || student.getPassword().trim().isEmpty()) {
+                student.setPassword("password123");
             }
+
+            // 3. Create User Record (for login)
+            user = new com.dance.studio.model.User();
+            user.setEmail(student.getEmail());
+            user.setUsername(student.getEmail());
+            user.setPassword(student.getPassword());
+            user.setRole(com.dance.studio.model.Role.STUDENT);
+            userRepo.save(user);
+        } else {
+            // User exists, check if this student name is already registered under this email/mobile
+            java.util.List<com.dance.studio.model.Student> existingStudents = studentRepo.findByEmailOrParentMobile(student.getEmail(), student.getParentMobile());
+            boolean alreadyExists = existingStudents.stream().anyMatch(st -> st.getName().equalsIgnoreCase(student.getName()));
+            if (alreadyExists) {
+                throw new RuntimeException("This student name is already registered in this family.");
+            }
+            // If user exists, we allow adding another student profile (account)
         }
 
-        // 3. Save Student
+        // 4. Save Student
         return studentRepo.save(student);
     }
 
