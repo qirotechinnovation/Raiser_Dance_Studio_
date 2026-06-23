@@ -12,7 +12,7 @@ RUN chmod +x mvnw
 
 RUN ./mvnw dependency:go-offline
 
-# Build the application
+
 RUN ./mvnw clean package -DskipTests
 
 # Stage 2: Runtime
