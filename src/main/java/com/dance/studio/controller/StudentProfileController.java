@@ -106,4 +106,39 @@ public class StudentProfileController {
                     .body("Upload failed: " + e.getMessage());
         }
     }
+
+    // ✅ GET FAMILY PROFILES FOR STUDENT
+    @GetMapping("/{id}/family")
+    public java.util.List<Map<String, Object>> getFamilyProfiles(@PathVariable Long id) {
+        Student currentStudent = studentRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        String parentMobile = currentStudent.getParentMobile();
+        java.util.List<Map<String, Object>> familyList = new java.util.ArrayList<>();
+
+        if (parentMobile == null || parentMobile.trim().isEmpty()) {
+            return familyList;
+        }
+
+        // Fetch all students sharing the parent mobile
+        java.util.List<Student> relatedStudents = studentRepo.findByParentMobile(parentMobile);
+
+        for (Student related : relatedStudents) {
+            // Skip the current student
+            if (related.getId().equals(id)) {
+                continue;
+            }
+
+            Map<String, Object> member = new HashMap<>();
+            member.put("id", related.getId().toString());
+            member.put("studentId", related.getId());
+            member.put("name", related.getName());
+            member.put("age", String.valueOf(related.getAge()));
+            member.put("relation", related.getParentRelation() != null ? related.getParentRelation() : "Family Member");
+            
+            familyList.add(member);
+        }
+
+        return familyList;
+    }
 }

@@ -40,6 +40,9 @@ public class StudentFeeController {
             item.put("status", f.getStatus());
             item.put("date", f.getPaidDate() != null ? f.getPaidDate().toString() : f.getDueDate().toString());
             item.put("method", f.getPaymentMode() != null ? f.getPaymentMode() : "N/A");
+            item.put("feeType", f.getFeeType());
+            item.put("feeMonth", f.getFeeMonth());
+            item.put("batchName", f.getBatchName());
             history.add(item);
 
             if ("UNPAID".equalsIgnoreCase(f.getStatus())) {

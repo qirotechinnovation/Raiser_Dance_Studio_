@@ -91,6 +91,9 @@ public class AdminFeeController {
         fee.setDiscountPercent(feeDetails.getDiscountPercent());
         fee.setStatus(feeDetails.getStatus());
         fee.setRemarks(feeDetails.getRemarks());
+        fee.setFeeType(feeDetails.getFeeType());
+        fee.setFeeMonth(feeDetails.getFeeMonth());
+        fee.setBatchName(feeDetails.getBatchName());
 
         Fee saved = feeRepo.save(fee);
 
@@ -240,7 +243,7 @@ public class AdminFeeController {
         String mobile = student.getParentMobile();
 
         String message = String.format(
-                "Fee Reminder for %s (ID: %d) | Pending Amount: ₹%.2f. Due Date: %s. Please clear your dues.",
+                "Fee Reminder for %s (ID: %d) | Pending Amount: ₹%.2f. Due Date: %s. Please clear your dues. Download app: https://raisers.dance/app",
                 studentName, student.getId(), fee.getAmount(), fee.getDueDate());
 
         // Save notification to database

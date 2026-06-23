@@ -26,7 +26,7 @@ public class FeeReminderScheduler {
         for (Fee fee : upcomingFees) {
             String message = "Reminder: Your fee of ₹" + fee.getAmount() + " for " + 
                              (fee.getFeeMonth() != null ? fee.getFeeMonth() : fee.getPlan()) + 
-                             " is due in 3 days (" + fee.getDueDate() + ").";
+                             " is due in 3 days (" + fee.getDueDate() + "). Download our app to pay online: https://raisers.dance/app";
             
             // 1. Notify Student
             com.dance.studio.model.Notification studentNotif = new com.dance.studio.model.Notification();
