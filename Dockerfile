@@ -9,7 +9,7 @@ COPY . /app/
 # Ensure the Maven wrapper is executable
 RUN chmod +x mvnw
 
-# Download dependencies (this will use the pom.xml in /app/)
+
 RUN ./mvnw dependency:go-offline
 
 # Build the application
