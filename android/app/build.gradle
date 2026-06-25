@@ -53,11 +53,6 @@ react {
 
     /* Autolinking */
     autolinkLibrariesWithApp()
-    //
-    // Added by install-expo-modules
-    entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", rootDir.getAbsoluteFile().getParentFile().getAbsolutePath(), "android", "absolute"].execute(null, rootDir).text.trim())
-    cliFile = new File(["node", "--print", "require.resolve('@expo/cli')"].execute(null, rootDir).text.trim())
-    bundleCommand = "export:embed"
 }
 
 /**
@@ -129,3 +124,51 @@ dependencies {
 }
 
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fix: Explicit task dependencies for Gradle 8.7+ implicit dependency validation
+//
+// React Native's createBundleReleaseJsAndAssets reads output files from CMake
+// build tasks, codegen tasks, and native merge tasks without declaring them as
+// formal Gradle inputs. Gradle 8.7+ treats this as a hard build error.
+// Adding explicit dependsOn() declarations satisfies the validator.
+//
+// Upstream issue: https://github.com/facebook/react-native/issues/35210
+// ─────────────────────────────────────────────────────────────────────────────
+afterEvaluate {
+    ["Release", "Debug"].each { variant ->
+        def cmakeType = (variant == "Release") ? "RelWithDebInfo" : "Debug"
+        def bundleTaskName = "createBundle${variant}JsAndAssets"
+        def bundleTask = tasks.findByName(bundleTaskName)
+
+        if (bundleTask != null) {
+            // CMake configure + build tasks (per-ABI, e.g. [arm64-v8a])
+            bundleTask.dependsOn(tasks.matching { t ->
+                t.name.startsWith("configureCMake${cmakeType}") ||
+                t.name.startsWith("buildCMake${cmakeType}")
+            })
+
+            // Named tasks for the specific variant
+            [
+                "check${variant}DuplicateClasses",
+                "merge${variant}JniLibFolders",
+                "merge${variant}NativeLibs",
+                "extract${variant}NativeSymbolTables",
+                "strip${variant}DebugSymbols",
+                "merge${variant}NativeDebugMetadata",
+                "generate${variant}BuildConfig",
+                "buildKotlinToolingMetadata",
+                // Codegen / autolinking tasks
+                "generateReactNativeEntryPoint",
+                "generateAutolinkingPackageList",
+                "generateAutolinkingNewArchitectureFiles"
+            ].each { taskName ->
+                def t = tasks.findByName(taskName)
+                if (t != null) {
+                    bundleTask.dependsOn(t)
+                }
+            }
+        }
+    }
+}
+

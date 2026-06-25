@@ -40,7 +40,7 @@ export default function StudentSignupScreen({ navigation }) {
     try {
       const response = await API.post("/auth/register", {
         name,
-        age: parseInt(age),
+        age: parseInt(age, 10),
         email,
         password,
         parentMobile: finalMobile,
@@ -95,7 +95,7 @@ export default function StudentSignupScreen({ navigation }) {
             </View>
             <View style={{ flex: 2 }}>
               <Text style={styles.label}>
-                {(!age || parseInt(age) < 18) ? "Parent Mobile" : "Mobile Number"}
+                {(!age || parseInt(age, 10) < 18) ? "Parent Mobile" : "Mobile Number"}
               </Text>
               <View style={[styles.input, { flexDirection: 'row', alignItems: 'center', paddingLeft: 10 }]}>
                 <Text style={{ color: '#000', fontWeight: 'bold', marginRight: 5 }}>+91</Text>
@@ -222,6 +222,7 @@ export default function StudentSignupScreen({ navigation }) {
     </LinearGradient>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

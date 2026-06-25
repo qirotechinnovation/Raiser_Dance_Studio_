@@ -1,13 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Colors from "../../theme/Colors";
 
-
 export default function ReceiptScreen({ navigation, route }) {
-    // Fallback data if no params passed
-    const { transactionId = "TXN-88291-OCT", amount = "150.00", date = "Oct 01, 2023", method = "Credit Card", status = "PAID", studentName = "Student Name", plan = "Tuition Fee" } = route.params || {};
+    const { 
+        transactionId = "TXN-88291-OCT", 
+        amount = "150.00", 
+        date = "Oct 01, 2023", 
+        method = "Credit Card", 
+        studentName = "Student Name", 
+        plan = "Tuition Fee",
+        batchName = "",
+        feeMonth = "",
+        feeType = ""
+    } = route.params || {};
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -26,7 +34,7 @@ export default function ReceiptScreen({ navigation, route }) {
                     </View>
 
                     <Text style={styles.successText}>Payment Successful</Text>
-                    <Text style={styles.amountText}>${amount}</Text>
+                    <Text style={styles.amountText}>₹{amount}</Text>
 
                     <View style={styles.divider} />
 
@@ -47,6 +55,27 @@ export default function ReceiptScreen({ navigation, route }) {
                         <Text style={styles.value}>{studentName}</Text>
                     </View>
 
+                    {batchName ? (
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Class / Batch</Text>
+                            <Text style={styles.value}>{batchName}</Text>
+                        </View>
+                    ) : null}
+
+                    {feeType ? (
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Fee Type</Text>
+                            <Text style={styles.value}>{feeType}</Text>
+                        </View>
+                    ) : null}
+
+                    {feeMonth && feeMonth !== 'N/A' ? (
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Month</Text>
+                            <Text style={styles.value}>{feeMonth}</Text>
+                        </View>
+                    ) : null}
+
                     <View style={styles.divider} />
 
                     <View style={styles.row}>
@@ -56,7 +85,7 @@ export default function ReceiptScreen({ navigation, route }) {
 
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Total Paid</Text>
-                        <Text style={styles.totalValue}>${amount}</Text>
+                        <Text style={styles.totalValue}>₹{amount}</Text>
                     </View>
                 </View>
 

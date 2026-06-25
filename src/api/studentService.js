@@ -47,6 +47,7 @@ const studentService = {
     getAvailableBatches: () => API.get('/student/batch/available'),
     submitBatchInquiry: (data) => API.post('/student/batch/enroll', data),
     getMyBatchInquiries: (studentId) => API.get(`/student/batch/${studentId}/inquiries`),
+    getFamilyProfiles: (studentId) => API.get(`/student/${studentId}/family`),
 
     // 🔔 Notifications
     // 🔔 Notifications

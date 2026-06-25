@@ -2,7 +2,6 @@ import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthContext } from "../context/AuthContext";
-import { View, ActivityIndicator } from "react-native";
 
 import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -68,18 +67,16 @@ import StudentGalleryScreen from '../screens/student/StudentGalleryScreen';
 import ManageHolidaysScreen from '../screens/admin/ManageHolidaysScreen';
 import SangeetSettingsScreen from '../screens/admin/SangeetSettingsScreen';
 import CalendarScheduleScreen from '../screens/admin/CalendarScheduleScreen';
+import ProfileSelectionScreen from '../screens/student/ProfileSelectionScreen';
+import SplashScreen from '../screens/SplashScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, activeProfile } = useContext(AuthContext);
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#BE123C" />
-      </View>
-    );
+    return <SplashScreen />;
   }
 
   return (
@@ -91,7 +88,11 @@ export default function AppNavigator() {
             {user.role === "ADMIN" ? (
               <Stack.Screen name="AdminTabs" component={AdminTabs} />
             ) : (
-              <Stack.Screen name="StudentTabs" component={StudentTabs} />
+              !activeProfile ? (
+                <Stack.Screen name="ProfileSelection" component={ProfileSelectionScreen} />
+              ) : (
+                <Stack.Screen name="StudentTabs" component={StudentTabs} />
+              )
             )}
             
             {/* Shared Protected Screens */}

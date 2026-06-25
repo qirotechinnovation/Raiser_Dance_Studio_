@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, Animated, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, Animated, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import LinearGradient from "react-native-linear-gradient";
 import styles from "./AuthStyles";
@@ -188,7 +188,7 @@ export default function LoginScreen({ navigation }) {
             {/* About Us Link */}
             <TouchableOpacity
               onPress={() => navigation.navigate("AboutUs")}
-              style={{ marginTop: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+              style={{ marginTop: 20, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
             >
               <Icon name="information-outline" size={16} color="#aaa" style={{ marginRight: 5 }} />
               <Text style={{ color: '#aaa', fontSize: 13 }}>About </Text>
@@ -200,3 +200,4 @@ export default function LoginScreen({ navigation }) {
     </KeyboardAvoidingView>
   );
 }
+

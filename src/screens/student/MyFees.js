@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar, Platform, Animated, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LinearGradient from "react-native-linear-gradient";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -16,11 +16,7 @@ export default function MyFees({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
-  useEffect(() => {
-    loadFees();
-  }, []);
-
-  const loadFees = async () => {
+  const loadFees = React.useCallback(async () => {
     const id = await AsyncStorage.getItem("studentId");
     try {
       if (id) {
@@ -41,12 +37,16 @@ export default function MyFees({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [fadeAnim, slideAnim]);
+
+  useEffect(() => {
+    loadFees();
+  }, [loadFees]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     loadFees();
-  }, []);
+  }, [loadFees]);
 
   const renderHistoryItem = ({ item }) => (
     <TouchableOpacity activeOpacity={0.9} style={styles.historyCard}>
@@ -54,9 +54,15 @@ export default function MyFees({ navigation }) {
         <View style={[styles.iconBox, { backgroundColor: item.status === 'PAID' ? '#ECFDF5' : '#FFF1F2' }]}>
           <Icon name={item.status === 'PAID' ? "check" : "clock-outline"} size={20} color={item.status === 'PAID' ? "#10B981" : "#E11D48"} />
         </View>
-        <View style={{ marginLeft: 12 }}>
-          <Text style={styles.historyTitle}>{item.plan || 'Monthly Fee'}</Text>
-          <Text style={styles.historyDate}>{item.date || item.dueDate} • {item.method || 'Pending'}</Text>
+        <View style={{ marginLeft: 12, flex: 1, paddingRight: 10 }}>
+          <Text style={styles.historyTitle} numberOfLines={1}>
+            {item.feeType || item.plan || 'Monthly Fee'}
+            {item.feeMonth && item.feeMonth !== 'N/A' ? ` - ${item.feeMonth}` : ''}
+          </Text>
+          <Text style={styles.historyDate}>
+            {item.batchName ? `Batch: ${item.batchName}\n` : ''}
+            {item.date || item.dueDate} • {item.method || 'Pending'}
+          </Text>
         </View>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
@@ -276,6 +282,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8
   },
-  enrollLargeBtnText: { color: Colors.WHITE, fontWeight: 'bold', fontSize: 16 },
-  planCard: { backgroundColor: Colors.WHITE, borderRadius: 24, padding: 25, elevation: 4, shadowColor: "#000", shadowOpacity: 0.1, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' },
+  enrollLargeBtnText: { color: Colors.WHITE, fontWeight: 'bold', fontSize: 16 }
 });

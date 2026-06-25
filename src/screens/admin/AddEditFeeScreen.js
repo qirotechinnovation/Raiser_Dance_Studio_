@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import LinearGradient from "react-native-linear-gradient";
@@ -23,38 +23,22 @@ export default function AddEditFeeScreen({ navigation, route }) {
         discountPercent: existingFee?.discountPercent?.toString() || "0",
         dueDate: existingFee?.dueDate || new Date().toISOString().split('T')[0],
         remarks: existingFee?.remarks || "",
-        status: existingFee?.status || "UNPAID"
+        status: existingFee?.status || "UNPAID",
+        feeType: existingFee?.feeType || "Monthly Fee",
+        feeMonth: existingFee?.feeMonth || new Date().toLocaleString('default', { month: 'long' }),
+        batchName: existingFee?.batchName || ""
     });
 
-    useEffect(() => {
-        fetchStudents();
-        fetchFeeStructure();
-    }, []);
-
-    const fetchFeeStructure = async () => {
+    const fetchFeeStructure = React.useCallback(async () => {
         try {
             const res = await adminService.getFeeStructure();
             setFeeStructure(res.data);
         } catch (e) {
             console.error("Failed to fetch fee structure", e);
         }
-    };
+    }, []);
 
-    const fetchStudents = async () => {
-        try {
-            const res = await adminService.getStudents();
-            setStudents(res.data);
-            if (!isEdit && res.data.length > 0) {
-                const firstStudent = res.data[0];
-                setFormData(prev => ({ ...prev, studentId: firstStudent.id }));
-                autoFetchAmount(firstStudent.id, formData.plan);
-            }
-        } catch (error) {
-            console.error("Failed to fetch students:", error);
-        }
-    };
-
-    const autoFetchAmount = (studentId, plan) => {
+    const autoFetchAmount = React.useCallback((studentId, plan) => {
         if (!studentId || !plan || feeStructure.length === 0) return;
 
         const student = students.find(s => s.id === studentId);
@@ -80,13 +64,36 @@ export default function AddEditFeeScreen({ navigation, route }) {
         if (fee) {
             setFormData(prev => ({ ...prev, amount: fee.amount.toString() }));
         }
-    };
+    }, [students, feeStructure]);
+
+    const fetchStudents = React.useCallback(async () => {
+        try {
+            const res = await adminService.getStudents();
+            setStudents(res.data);
+            if (!isEdit && res.data.length > 0) {
+                const firstStudent = res.data[0];
+                setFormData(prev => ({ 
+                    ...prev, 
+                    studentId: firstStudent.id,
+                    batchName: firstStudent.batch ? firstStudent.batch.name : ""
+                }));
+                autoFetchAmount(firstStudent.id, formData.plan);
+            }
+        } catch (error) {
+            console.error("Failed to fetch students:", error);
+        }
+    }, [isEdit, formData.plan, autoFetchAmount]);
+
+    useEffect(() => {
+        fetchStudents();
+        fetchFeeStructure();
+    }, [fetchStudents, fetchFeeStructure]);
 
     useEffect(() => {
         if (!isEdit && formData.studentId && formData.plan) {
             autoFetchAmount(formData.studentId, formData.plan);
         }
-    }, [formData.studentId, formData.plan, feeStructure]);
+    }, [isEdit, formData.studentId, formData.plan, autoFetchAmount]);
 
     const handleSave = async () => {
         if (!formData.studentId || !formData.amount || !formData.dueDate) {
@@ -103,7 +110,10 @@ export default function AddEditFeeScreen({ navigation, route }) {
                 discountPercent: parseFloat(formData.discountPercent) || 0,
                 dueDate: formData.dueDate,
                 remarks: formData.remarks,
-                status: formData.status
+                status: formData.status,
+                feeType: formData.feeType,
+                feeMonth: formData.feeMonth,
+                batchName: formData.batchName
             };
 
             if (isEdit) {
@@ -152,7 +162,14 @@ export default function AddEditFeeScreen({ navigation, route }) {
                             <Text style={styles.pickerLabel}>Select Student *</Text>
                             <Picker
                                 selectedValue={formData.studentId}
-                                onValueChange={(v) => setFormData({ ...formData, studentId: v })}
+                                onValueChange={(v) => {
+                                    const selectedStud = students.find(s => s.id === v);
+                                    setFormData({ 
+                                        ...formData, 
+                                        studentId: v,
+                                        batchName: selectedStud && selectedStud.batch ? selectedStud.batch.name : ""
+                                    });
+                                }}
                                 enabled={!isEdit}
                                 style={{ color: Colors.TEXT_PRIMARY }}
                             >
@@ -161,6 +178,48 @@ export default function AddEditFeeScreen({ navigation, route }) {
                                 ))}
                             </Picker>
                         </View>
+
+                        <View style={styles.pickerContainer}>
+                            <Text style={styles.pickerLabel}>Fee Type</Text>
+                            <Picker
+                                selectedValue={formData.feeType}
+                                onValueChange={(v) => setFormData({ ...formData, feeType: v })}
+                                style={{ color: Colors.TEXT_PRIMARY }}
+                            >
+                                <Picker.Item label="Monthly Fee" value="Monthly Fee" />
+                                <Picker.Item label="Admission Fee" value="Admission Fee" />
+                            </Picker>
+                        </View>
+
+                        <View style={styles.pickerContainer}>
+                            <Text style={styles.pickerLabel}>Fee Month</Text>
+                            <Picker
+                                selectedValue={formData.feeMonth}
+                                onValueChange={(v) => setFormData({ ...formData, feeMonth: v })}
+                                style={{ color: Colors.TEXT_PRIMARY }}
+                            >
+                                <Picker.Item label="N/A" value="N/A" />
+                                <Picker.Item label="January" value="January" />
+                                <Picker.Item label="February" value="February" />
+                                <Picker.Item label="March" value="March" />
+                                <Picker.Item label="April" value="April" />
+                                <Picker.Item label="May" value="May" />
+                                <Picker.Item label="June" value="June" />
+                                <Picker.Item label="July" value="July" />
+                                <Picker.Item label="August" value="August" />
+                                <Picker.Item label="September" value="September" />
+                                <Picker.Item label="October" value="October" />
+                                <Picker.Item label="November" value="November" />
+                                <Picker.Item label="December" value="December" />
+                            </Picker>
+                        </View>
+
+                        <InputField
+                            label="Batch / Class Name"
+                            value={formData.batchName}
+                            onChange={(v) => setFormData({ ...formData, batchName: v })}
+                            icon="google-classroom"
+                        />
 
                         <View style={styles.pickerContainer}>
                             <Text style={styles.pickerLabel}>Fee Plan</Text>
