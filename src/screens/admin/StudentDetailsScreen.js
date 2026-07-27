@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import adminService from "../../api/adminService";
+import API from "../../api/axios";
 import Colors from "../../theme/Colors";
 
 
@@ -13,6 +14,7 @@ export default function StudentDetailsScreen({ navigation, route }) {
     const [student, setStudent] = useState(studentData || null);
     const [fees, setFees] = useState([]);
     const [loading, setLoading] = useState(true);
+    const baseURL = API.defaults.baseURL.replace(/\/$/, "");
 
     useEffect(() => {
         fetchDetails();
@@ -110,14 +112,23 @@ export default function StudentDetailsScreen({ navigation, route }) {
                 {/* Profile Header */}
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarContainer}>
-                        <Image
-                            source={{ uri: "https://randomuser.me/api/portraits/women/68.jpg" }}
-                            style={styles.avatar}
-                        />
+                        {student?.profilePic ? (
+                            <Image
+                                source={{ uri: `${baseURL}/uploads/profiles/${student.profilePic}` }}
+                                style={styles.avatar}
+                            />
+                        ) : (
+                            <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f1f5f9' }]}>
+                                <Icon name="account" size={50} color={Colors.TEXT_MUTED} />
+                            </View>
+                        )}
                     </View>
                     <Text style={styles.name}>{student?.name || "Student Name"}</Text>
-                    <Text style={styles.classType}>{student?.classType || "Course Name"}</Text>
-                    <Text style={styles.studentId}>Student ID: {student?.studentId || "#00000"}</Text>
+                    <Text style={styles.classType}>
+                        {student?.danceType?.name || student?.classType || "Course Name"}
+                        {student?.batch?.name ? ` • ${student.batch.name}` : ""}
+                    </Text>
+                    <Text style={styles.studentId}>Student ID: #{student?.id || "0000"}</Text>
                 </View>
 
                 {/* Status Toggle Card */}
@@ -138,7 +149,7 @@ export default function StudentDetailsScreen({ navigation, route }) {
                 <View style={styles.statsRow}>
                     <View style={styles.statCard}>
                         <Text style={styles.statLabel}>Admission Date</Text>
-                        <Text style={styles.statValue}>{student?.admissionDate || "N/A"}</Text>
+                        <Text style={styles.statValue}>{student?.joiningDate || "N/A"}</Text>
                         <View style={student?.active === false ? styles.inactiveBadge : styles.activeBadge}>
                             <Icon name={student?.active === false ? "alert-circle" : "check-circle"} size={14} color={student?.active === false ? Colors.ERROR : "#10B981"} />
                             <Text style={student?.active === false ? styles.inactiveText : styles.activeText}>
@@ -198,10 +209,10 @@ export default function StudentDetailsScreen({ navigation, route }) {
                         <Icon name="account" size={24} color={Colors.PRIMARY} />
                     </View>
                     <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={styles.parentName}>{student?.parentName || "Parent"}</Text>
+                        <Text style={styles.parentName}>{student?.parentRelation ? `Parent (${student.parentRelation})` : "Parent / Guardian"}</Text>
                         {/* Explicitly showing the number now */}
-                        <Text style={styles.contactText}>{student?.parentMobile || student?.mobileNumber || student?.parentPhone || "No Contact Info"}</Text>
-                        <Text style={styles.parentRole}>{student?.parentRole || "Primary Contact"}</Text>
+                        <Text style={styles.contactText}>{student?.parentMobile || student?.mobileNumber || "No Contact Info"}</Text>
+                        <Text style={styles.parentRole}>Primary Contact</Text>
                     </View>
                     <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: Colors.PRIMARY }]}

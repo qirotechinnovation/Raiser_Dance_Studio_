@@ -13,7 +13,7 @@ const HEADER_BG = Colors.PRIMARY;
 export default function AdminAboutUsScreen({ navigation }) {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [uploading, setUploading] = useState({ 1: false, 2: false, 3: false });
+    const [uploading, setUploading] = useState({ 1: false, 2: false, 3: false, 4: false });
     const baseURL = API.defaults.baseURL;
 
     // Form State
@@ -36,7 +36,8 @@ export default function AdminAboutUsScreen({ navigation }) {
         privateLessonsText: "",
         image1Path: "",
         image2Path: "",
-        image3Path: ""
+        image3Path: "",
+        directorImagePath: ""
     });
 
     useEffect(() => {
@@ -66,7 +67,8 @@ export default function AdminAboutUsScreen({ navigation }) {
                     privateLessonsText: res.data.privateLessonsText || "",
                     image1Path: res.data.image1Path || "",
                     image2Path: res.data.image2Path || "",
-                    image3Path: res.data.image3Path || ""
+                    image3Path: res.data.image3Path || "",
+                    directorImagePath: res.data.directorImagePath || ""
                 });
             }
         } catch (error) {
@@ -108,7 +110,7 @@ export default function AdminAboutUsScreen({ navigation }) {
             const formDataImage = new FormData();
             formDataImage.append('file', {
                 uri: asset.uri,
-                type: asset.type,
+                type: asset.type || 'image/jpeg',
                 name: asset.fileName || `about_us_${imageNumber}.jpg`,
             });
 
@@ -116,8 +118,12 @@ export default function AdminAboutUsScreen({ navigation }) {
             try {
                 const res = await adminService.uploadAboutUsImage(imageNumber, formDataImage);
                 if (res.data && res.data.success) {
-                    setFormData({ ...formData, [`image${imageNumber}Path`]: res.data.imagePath });
-                    Alert.alert("Success", `Image ${imageNumber} uploaded!`);
+                    if (imageNumber === 4) {
+                        setFormData({ ...formData, directorImagePath: res.data.imagePath });
+                    } else {
+                        setFormData({ ...formData, [`image${imageNumber}Path`]: res.data.imagePath });
+                    }
+                    Alert.alert("Success", `Image uploaded successfully!`);
                 }
             } catch (error) {
                 console.error("Upload error:", error);
@@ -174,6 +180,27 @@ export default function AdminAboutUsScreen({ navigation }) {
                         ))}
                     </ScrollView>
                     <Text style={styles.infoText}>Tap an image slot to upload/update studio photos.</Text>
+                </View>
+
+                {/* Director Image Section */}
+                <Text style={styles.sectionTitle}>Director / Owner Photo</Text>
+                <View style={styles.card}>
+                    <TouchableOpacity style={[styles.imageSelector, { width: 150, height: 150, borderRadius: 75, alignSelf: 'center' }]} onPress={() => pickImage(4)}>
+                        {uploading[4] ? (
+                            <ActivityIndicator color={HEADER_BG} />
+                        ) : formData.directorImagePath ? (
+                            <Image
+                                source={{ uri: `${baseURL}/uploads/${formData.directorImagePath}` }}
+                                style={[styles.selectedImage, { borderRadius: 75 }]}
+                            />
+                        ) : (
+                            <View style={styles.imagePlaceholder}>
+                                <Icon name="account-circle-outline" size={40} color={Colors.TEXT_MUTED} />
+                                <Text style={styles.placeholderText}>Upload Photo</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <Text style={[styles.infoText, { textAlign: 'center' }]}>Tap to upload the owner's photo.</Text>
                 </View>
 
                 {/* General Info */}

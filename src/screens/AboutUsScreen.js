@@ -143,8 +143,34 @@ export default function AboutUsScreen({ navigation }) {
                     <Text style={styles.tagline}>{data.tagline || "Where Passion Rises & Talent Transforms"}</Text>
                 </View>
 
-                {/* Fallback to static About Us content */}
-                {renderSection("About Us", data.aboutText, "information-outline")}
+                {/* Section: About Our Director */}
+                {data.directorImagePath || data.aboutText ? (
+                    <View style={styles.card}>
+                        <View style={styles.cardHeader}>
+                            <Icon name="account-star" size={24} color={Colors.PRIMARY} />
+                            <Text style={styles.cardTitle}>About Our Director</Text>
+                        </View>
+                        <View style={styles.directorCard}>
+                            {data.directorImagePath ? (
+                                <Image source={{ uri: buildImageUri(data.directorImagePath) }} style={styles.directorImage} resizeMode="cover" />
+                            ) : (
+                                <View style={styles.directorImagePlaceholder}>
+                                    <Icon name="account-star" size={50} color={Colors.TEXT_MUTED} />
+                                </View>
+                            )}
+                            <View style={styles.directorInfo}>
+                                <View style={styles.ownerBadge}>
+                                    <Text style={styles.ownerBadgeText}>FOUNDER & DIRECTOR</Text>
+                                </View>
+                                {data.aboutText ? (
+                                    <Text style={styles.description}>{data.aboutText}</Text>
+                                ) : null}
+                            </View>
+                        </View>
+                    </View>
+                ) : null}
+
+                {/* Our Passion */}
                 {renderSection("Our Passion", data.passionText, "heart-outline")}
 
                 <View style={styles.divider} />
@@ -385,5 +411,13 @@ const styles = StyleSheet.create({
     galleryCardContainer: { width: 220, height: 140, borderRadius: 15, overflow: 'hidden', backgroundColor: Colors.BORDER },
     galleryImage: { width: '100%', height: '100%' },
     galleryOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 10, height: 60, justifyContent: 'flex-end' },
-    galleryName: { fontSize: 13, fontWeight: 'bold', color: Colors.WHITE, textAlign: 'left' }
+    galleryName: { fontSize: 13, fontWeight: 'bold', color: Colors.WHITE, textAlign: 'left' },
+
+    // Director Section Styles
+    directorCard: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+    directorImage: { width: 90, height: 90, borderRadius: 45, marginRight: 15 },
+    directorImagePlaceholder: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    directorInfo: { flex: 1 },
+    ownerBadge: { backgroundColor: '#fee2e2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 8 },
+    ownerBadgeText: { color: Colors.PRIMARY, fontSize: 10, fontWeight: 'bold' }
 });

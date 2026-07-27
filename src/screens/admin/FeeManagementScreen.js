@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, ScrollView, StatusBar, Modal, Platform } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, ScrollView, StatusBar, Modal, Platform, TextInput } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import adminService from "../../api/adminService";
 import Colors from "../../theme/Colors";
@@ -11,7 +11,8 @@ export default function FeeManagementScreen({ navigation }) {
     const [stats, setStats] = useState({ collected: "0", outstanding: "0", pendingCount: 0 });
     const [records, setRecords] = useState([]);
     const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-    const [selectedFeeId, setSelectedFeeId] = useState(null);
+    const [selectedFee, setSelectedFee] = useState(null);
+    const [paidAmount, setPaidAmount] = useState("");
     const [paymentMode, setPaymentMode] = useState("GPAY");
 
     useEffect(() => {
@@ -71,15 +72,16 @@ export default function FeeManagementScreen({ navigation }) {
         }
     };
 
-    const handleMarkPaid = (feeId) => {
-        setSelectedFeeId(feeId);
+    const handleMarkPaid = (fee) => {
+        setSelectedFee(fee);
+        setPaidAmount(fee.amount?.toString() || "");
         setPaymentModalVisible(true);
     };
 
     const submitPayment = async () => {
         setLoading(true);
         try {
-            await adminService.markFeePaid(selectedFeeId, paymentMode, "", "Mobile Admin Entry");
+            await adminService.markFeePaid(selectedFee.id, paymentMode, "", "Mobile Admin Entry", paidAmount);
             setPaymentModalVisible(false);
             fetchFeeData(); 
             Alert.alert("Success", "Payment recorded successfully");
@@ -137,10 +139,19 @@ export default function FeeManagementScreen({ navigation }) {
                     </View>
                     <View style={styles.recordMainInfo}>
                         <Text style={styles.studentName}>{item.student?.name || 'Unknown'}</Text>
-                        <Text style={styles.planSubtitle}>{item.plan} • {displayStatus}</Text>
+                        <Text style={styles.planSubtitle}>
+                            {item.plan} 
+                            {item.student?.batch?.name ? ` • ${item.student.batch.name}` : ''} 
+                            • {displayStatus}
+                        </Text>
                     </View>
                     <View style={styles.priceContainer}>
                         <Text style={styles.recordPrice}>₹{item.amount}</Text>
+                        {item.paidAmount && item.paidAmount < item.amount && (
+                            <Text style={{fontSize: 12, color: Colors.TEXT_SECONDARY, marginTop: 2}}>
+                                Paid: ₹{item.paidAmount} | Bal: ₹{item.amount - item.paidAmount}
+                            </Text>
+                        )}
                     </View>
                 </View>
 
@@ -179,7 +190,7 @@ export default function FeeManagementScreen({ navigation }) {
                     {!isPaid && (
                         <TouchableOpacity
                             style={[styles.moreBtn, { backgroundColor: '#DCFCE7', width: 'auto', paddingHorizontal: 15 }]}
-                            onPress={() => handleMarkPaid(item.id)}
+                            onPress={() => handleMarkPaid(item)}
                         >
                             <Text style={{ color: '#166534', fontWeight: 'bold' }}>Pay</Text>
                         </TouchableOpacity>
@@ -248,6 +259,28 @@ export default function FeeManagementScreen({ navigation }) {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Mark Payment</Text>
+                        
+                        {selectedFee && (
+                            <View style={{marginBottom: 20}}>
+                                <Text style={{fontSize: 14, color: Colors.TEXT_SECONDARY, marginBottom: 5}}>Total Fee: <Text style={{fontWeight: 'bold', color: Colors.TEXT_PRIMARY}}>₹{selectedFee.amount}</Text></Text>
+                                
+                                <Text style={styles.modalLabel}>Enter Paid Amount</Text>
+                                <TextInput
+                                    style={styles.amountInput}
+                                    keyboardType="numeric"
+                                    value={paidAmount}
+                                    onChangeText={setPaidAmount}
+                                    placeholder="Enter amount"
+                                />
+                                
+                                {paidAmount !== "" && (
+                                    <Text style={{fontSize: 13, color: '#E11D48', marginTop: 8}}>
+                                        Pending Balance: ₹{Math.max(0, selectedFee.amount - Number(paidAmount))}
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+
                         <Text style={styles.modalLabel}>Select Payment Mode</Text>
                         <View style={styles.paymentOptions}>
                             {['GPAY', 'CASH', 'PHONEPE', 'BANK'].map(mode => (
@@ -359,7 +392,8 @@ const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { width: '85%', backgroundColor: Colors.WHITE, borderRadius: 25, padding: 25 },
     modalTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.TEXT_PRIMARY, marginBottom: 20 },
-    modalLabel: { fontSize: 14, color: Colors.TEXT_SECONDARY, marginBottom: 15 },
+    amountInput: { borderWidth: 1, borderColor: Colors.BORDER, borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, color: Colors.TEXT_PRIMARY, backgroundColor: '#F8FAFC' },
+    modalLabel: { fontSize: 14, color: Colors.TEXT_SECONDARY, marginBottom: 10, fontWeight: '500' },
     paymentOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 25 },
     payOption: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.BORDER },
     payOptionActive: { backgroundColor: Colors.PRIMARY, borderColor: Colors.PRIMARY },

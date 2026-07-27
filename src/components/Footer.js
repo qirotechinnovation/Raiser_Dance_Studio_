@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <View style={styles.container}>
       <View style={styles.line} />
-      <Text style={styles.text}>Qiro Tech Innovation</Text>
+      <Text style={styles.text}> <a href="https://qirotec.com">Powerd By Qiro Tech</a></Text>
       <Text style={[styles.text, { marginTop: 4 }]}>Copyright © 2026</Text>
     </View>
   );

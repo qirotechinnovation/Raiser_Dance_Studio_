@@ -8,6 +8,7 @@ export default function ReceiptScreen({ navigation, route }) {
     const { 
         transactionId = "TXN-88291-OCT", 
         amount = "150.00", 
+        paidAmount,
         date = "Oct 01, 2023", 
         method = "Credit Card", 
         studentName = "Student Name", 
@@ -16,6 +17,9 @@ export default function ReceiptScreen({ navigation, route }) {
         feeMonth = "",
         feeType = ""
     } = route.params || {};
+
+    const displayAmount = paidAmount && parseFloat(paidAmount) > 0 ? paidAmount : amount;
+    const isPartial = paidAmount && parseFloat(amount) > parseFloat(paidAmount);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -34,7 +38,7 @@ export default function ReceiptScreen({ navigation, route }) {
                     </View>
 
                     <Text style={styles.successText}>Payment Successful</Text>
-                    <Text style={styles.amountText}>₹{amount}</Text>
+                    <Text style={styles.amountText}>₹{displayAmount}</Text>
 
                     <View style={styles.divider} />
 
@@ -83,10 +87,24 @@ export default function ReceiptScreen({ navigation, route }) {
                         <Text style={styles.value}>{plan}</Text>
                     </View>
 
+                    {isPartial ? (
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Total Plan Fee</Text>
+                            <Text style={styles.value}>₹{amount}</Text>
+                        </View>
+                    ) : null}
+
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Total Paid</Text>
-                        <Text style={styles.totalValue}>₹{amount}</Text>
+                        <Text style={styles.totalValue}>₹{displayAmount}</Text>
                     </View>
+                    
+                    {isPartial ? (
+                        <View style={[styles.row, {marginTop: 10}]}>
+                            <Text style={[styles.label, {color: '#E11D48', fontWeight: 'bold'}]}>Pending Balance</Text>
+                            <Text style={[styles.value, {color: '#E11D48'}]}>₹{parseFloat(amount) - parseFloat(paidAmount)}</Text>
+                        </View>
+                    ) : null}
                 </View>
 
                 <TouchableOpacity style={styles.downloadBtn} onPress={() => alert("Downloading PDF...")}>

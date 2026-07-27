@@ -55,7 +55,7 @@ const adminService = {
     updateFee: (id, data) => API.put(`/admin/fees/${id}`, data),
     deleteFee: (id) => API.delete(`/admin/fees/${id}`),
     getStudentFees: (studentId) => API.get(`/admin/fees/student/${studentId}`),
-    markFeePaid: (id, mode, transId, remarks) => API.put(`/admin/fees/${id}/pay`, null, { params: { paymentMode: mode, transactionId: transId, remarks: remarks } }),
+    markFeePaid: (id, mode, transId, remarks, amountPaid) => API.put(`/admin/fees/${id}/pay`, null, { params: { paymentMode: mode, transactionId: transId, remarks: remarks, amountPaid: amountPaid } }),
     sendFeeReminder: (id) => API.post(`/admin/fees/${id}/remind`),
     getReminders: () => API.get('/admin/reminders'),
 

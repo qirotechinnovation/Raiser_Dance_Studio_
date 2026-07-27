@@ -253,7 +253,7 @@ export default function WelcomeScreen({ navigation }) {
             text: "Sign Up Now",
             onPress: () => {
               setModalVisible(false);
-              navigation.navigate("Signup", { 
+              navigation.navigate("Signup", {
                 inquiryType,
                 selectedBatchId: selectedBatch?.id,
                 selectedEventId: selectedEvent?.id,
@@ -738,7 +738,7 @@ export default function WelcomeScreen({ navigation }) {
           >
             <Text style={styles.sectionSubtitle}>FIND US</Text>
             <Text style={styles.sectionHeading}>Studio Location & Directions</Text>
-            
+
             <View style={styles.locationCard}>
               <View style={styles.locationInfoRow}>
                 <View style={styles.locationIconBox}>
@@ -771,20 +771,20 @@ export default function WelcomeScreen({ navigation }) {
                   <View style={[styles.roadHorizontal, { top: "60%" }]} />
                   <View style={styles.roadVertical} />
                   <View style={[styles.roadVertical, { left: "70%" }]} />
-                  
+
                   {/* Location Marker */}
                   <View style={styles.mapMarkerContainer}>
                     <Icon name="map-marker" size={32} color={Colors.PRIMARY} />
                     <View style={styles.markerRadarRing} />
                   </View>
-                  
+
                   <Text style={styles.mapLabel}>MG Road</Text>
                   <Text style={[styles.mapLabel, { top: "70%", left: "10%" }]}>Royal Plaza</Text>
                 </LinearGradient>
               </View>
 
-              <TouchableOpacity 
-                style={styles.directionsBtn} 
+              <TouchableOpacity
+                style={styles.directionsBtn}
                 onPress={() => {
                   Alert.alert("Directions", "Opening Google Maps for Raiser's Dance Studio directions...", [
                     { text: "OK" }
@@ -815,7 +815,7 @@ export default function WelcomeScreen({ navigation }) {
           ) : null}
           {aboutUs?.address ? (
             <View style={styles.footerItem}>
-              <Icon name="map-marker-outline" size={16} color={Colors.TEXT_LIGHT} />
+
               <Text style={styles.footerText}>{aboutUs.address}</Text>
             </View>
           ) : null}

@@ -46,7 +46,7 @@ export default function AttendanceManagementScreen({ navigation }) {
                 const initial = {};
                 stuRes.data.forEach(s => {
                     const existing = attRes.data.find(a => a.student?.id === s.id);
-                    initial[s.id] = existing ? existing.present : true;
+                    initial[s.id] = existing ? existing.present : false;
                 });
                 setAttendance(initial);
             } else {
