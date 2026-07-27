@@ -48,4 +48,29 @@ public class FeeReminderScheduler {
             System.out.println("🔔 Sent 3-day Fee Reminder for: " + fee.getStudent().getName());
         }
     }
+    @Scheduled(cron = "0 0 9 10,15,25 * ?") // 9 AM on 10th, 15th, 25th of every month
+    public void sendDateSpecificFeeReminders() {
+        List<Fee> unpaidFees = feeRepo.findByStatus("UNPAID");
+
+        for (Fee fee : unpaidFees) {
+            double currentPaid = fee.getPaidAmount() != null ? fee.getPaidAmount() : 0.0;
+            double pendingAmount = fee.getAmount() - currentPaid;
+
+            if (pendingAmount > 0 && fee.getStudent() != null) {
+                String message = "Reminder: Your fee of ₹" + pendingAmount + " for " +
+                        (fee.getFeeMonth() != null ? fee.getFeeMonth() : fee.getPlan()) +
+                        " is still pending. Please pay to continue classes.";
+
+                // Notify Student
+                com.dance.studio.model.Notification studentNotif = new com.dance.studio.model.Notification();
+                studentNotif.setType("FEE_REMINDER");
+                studentNotif.setMessage(message);
+                studentNotif.setTimestamp(java.time.LocalDateTime.now());
+                studentNotif.setStudent(fee.getStudent());
+                notificationRepo.save(studentNotif);
+
+                System.out.println("🔔 Sent Date-Specific Pending Fee Notification to: " + fee.getStudent().getName() + " (Pending: ₹" + pendingAmount + ")");
+            }
+        }
+    }
 }

@@ -6,6 +6,8 @@ import java.util.*;
 import java.time.LocalDate;
 
 import com.dance.studio.repository.FeeRepository;
+import com.dance.studio.repository.FeeTransactionRepository;
+import com.dance.studio.model.FeeTransaction;
 
 @RestController
 @RequestMapping("/student")
@@ -13,11 +15,13 @@ import com.dance.studio.repository.FeeRepository;
 public class StudentFeeController {
 
     private final FeeRepository feeRepo;
+    private final FeeTransactionRepository feeTransactionRepo;
     private final com.dance.studio.repository.AttendanceRepository attendanceRepo;
 
-    public StudentFeeController(FeeRepository feeRepo,
+    public StudentFeeController(FeeRepository feeRepo, FeeTransactionRepository feeTransactionRepo,
             com.dance.studio.repository.AttendanceRepository attendanceRepo) {
         this.feeRepo = feeRepo;
+        this.feeTransactionRepo = feeTransactionRepo;
         this.attendanceRepo = attendanceRepo;
     }
 
@@ -43,11 +47,19 @@ public class StudentFeeController {
             item.put("feeType", f.getFeeType());
             item.put("feeMonth", f.getFeeMonth());
             item.put("batchName", f.getBatchName());
+            item.put("paidAmount", f.getPaidAmount() != null ? f.getPaidAmount() : 0.0);
+            
+            // Attach individual transactions
+            List<FeeTransaction> txns = feeTransactionRepo.findByFeeId(f.getId());
+            item.put("transactions", txns);
+            
             history.add(item);
 
             if ("UNPAID".equalsIgnoreCase(f.getStatus())) {
-                pendingAmount += f.getAmount();
-                if (nextDueDate == null || f.getDueDate().isBefore(nextDueDate)) {
+                double currentPaid = f.getPaidAmount() != null ? f.getPaidAmount() : 0.0;
+                pendingAmount += (f.getAmount() - currentPaid);
+                
+                if (nextDueDate == null || (f.getDueDate() != null && f.getDueDate().isBefore(nextDueDate))) {
                     nextDueDate = f.getDueDate();
                 }
             }

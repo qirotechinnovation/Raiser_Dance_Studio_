@@ -1,9 +1,11 @@
 package com.dance.studio.controller;
 
 import com.dance.studio.model.Fee;
+import com.dance.studio.model.FeeTransaction;
 import com.dance.studio.model.Student;
 import com.dance.studio.model.Notification;
 import com.dance.studio.repository.FeeRepository;
+import com.dance.studio.repository.FeeTransactionRepository;
 import com.dance.studio.repository.StudentRepository;
 import com.dance.studio.repository.NotificationRepository;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +22,14 @@ import java.util.stream.Collectors;
 public class AdminFeeController {
 
     private final FeeRepository feeRepo;
+    private final FeeTransactionRepository feeTransactionRepo;
     private final StudentRepository studentRepo;
     private final NotificationRepository notificationRepo;
 
-    public AdminFeeController(FeeRepository feeRepo, StudentRepository studentRepo,
+    public AdminFeeController(FeeRepository feeRepo, FeeTransactionRepository feeTransactionRepo, StudentRepository studentRepo,
             NotificationRepository notificationRepo) {
         this.feeRepo = feeRepo;
+        this.feeTransactionRepo = feeTransactionRepo;
         this.studentRepo = studentRepo;
         this.notificationRepo = notificationRepo;
     }
@@ -140,7 +144,8 @@ public class AdminFeeController {
             @PathVariable Long feeId,
             @RequestParam(required = false) String paymentMode,
             @RequestParam(required = false) String transactionId,
-            @RequestParam(required = false) String remarks) {
+            @RequestParam(required = false) String remarks,
+            @RequestParam(required = false) Double amountPaid) {
         Fee fee = feeRepo.findById(feeId)
                 .orElseThrow(() -> new RuntimeException("Fee not found"));
 
@@ -148,13 +153,11 @@ public class AdminFeeController {
             return fee; // Already paid
         }
 
-        fee.setStatus("PAID");
-        fee.setPaidDate(LocalDate.now());
-        fee.setPaymentMode(paymentMode != null ? paymentMode : "CASH");
-        fee.setTransactionId(transactionId);
-        fee.setRemarks(remarks);
-
-        // ✅ Automatic Receipt Number Generation
+        double paymentVal = amountPaid != null ? amountPaid : fee.getAmount();
+        double currentPaidAmount = fee.getPaidAmount() != null ? fee.getPaidAmount() : 0.0;
+        double newPaidAmount = currentPaidAmount + paymentVal;
+        
+        // ✅ Automatic Receipt Number Generation for this transaction
         String nextReceiptNo = "RDS-1001";
         Fee lastFee = feeRepo.findTopByReceiptNoIsNotNullOrderByReceiptNoDesc();
         if (lastFee != null && lastFee.getReceiptNo() != null) {
@@ -168,33 +171,50 @@ public class AdminFeeController {
                 nextReceiptNo = "RDS-" + System.currentTimeMillis() / 10000;
             }
         }
-        fee.setReceiptNo(nextReceiptNo);
+        
+        fee.setPaidAmount(newPaidAmount);
+        fee.setPaymentMode(paymentMode != null ? paymentMode : "CASH");
+        fee.setTransactionId(transactionId);
+        fee.setRemarks(remarks);
+        fee.setReceiptNo(nextReceiptNo); // keep last receipt on fee for ref
+
+        if (newPaidAmount >= fee.getAmount()) {
+            fee.setStatus("PAID");
+            fee.setPaidDate(LocalDate.now());
+        }
 
         Fee saved = feeRepo.save(fee);
+
+        // Save Fee Transaction
+        FeeTransaction transaction = new FeeTransaction(saved, paymentVal, LocalDate.now(), 
+            paymentMode != null ? paymentMode : "CASH", transactionId, nextReceiptNo);
+        feeTransactionRepo.save(transaction);
 
         // Update Student's total outstanding balance
         if (fee.getStudent() != null) {
             Student student = fee.getStudent();
             double currentOutstanding = student.getTotalOutstanding();
 
-            // Deduct the amount from balance
-            student.setTotalOutstanding(Math.max(0, currentOutstanding - fee.getAmount()));
+            // Deduct the partial or full amount from balance
+            student.setTotalOutstanding(Math.max(0, currentOutstanding - paymentVal));
             studentRepo.save(student);
 
-            // Auto-generate next fee record as UNPAID
-            Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
-                    fee.getPlan(), "UNPAID", fee.getFeeType(), fee.getFeeMonth(), calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
-                    null, student, null, null, null, null, null);
-            nextFee.setBatchName(fee.getBatchName());
-            feeRepo.save(nextFee);
+            if ("PAID".equalsIgnoreCase(saved.getStatus())) {
+                // Auto-generate next fee record as UNPAID
+                Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
+                        fee.getPlan(), "UNPAID", fee.getFeeType(), fee.getFeeMonth(), calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
+                        null, student, null, null, null, null, null);
+                nextFee.setBatchName(fee.getBatchName());
+                feeRepo.save(nextFee);
 
-            // Mark old Fee Reminders as read
-            notificationRepo.findByStudentId(student.getId()).stream()
-                    .filter(n -> "FEE_REMINDER".equals(n.getType()) && !n.isRead())
-                    .forEach(n -> {
-                        n.setRead(true);
-                        notificationRepo.save(n);
-                    });
+                // Mark old Fee Reminders as read
+                notificationRepo.findByStudentId(student.getId()).stream()
+                        .filter(n -> "FEE_REMINDER".equals(n.getType()) && !n.isRead())
+                        .forEach(n -> {
+                            n.setRead(true);
+                            notificationRepo.save(n);
+                        });
+            }
         }
 
         return saved;

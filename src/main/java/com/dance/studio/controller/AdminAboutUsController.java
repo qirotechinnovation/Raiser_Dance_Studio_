@@ -85,6 +85,8 @@ public class AdminAboutUsController {
                 toSave.setImage2Path(settings.getImage2Path());
             if (settings.getImage3Path() != null)
                 toSave.setImage3Path(settings.getImage3Path());
+            if (settings.getDirectorImagePath() != null)
+                toSave.setDirectorImagePath(settings.getDirectorImagePath());
         }
 
         toSave.setUpdatedAt(LocalDateTime.now());
@@ -135,6 +137,9 @@ public class AdminAboutUsController {
                     break;
                 case 3:
                     toUpdate.setImage3Path(relativePath);
+                    break;
+                case 4:
+                    toUpdate.setDirectorImagePath(relativePath);
                     break;
                 default:
                     return ResponseEntity.badRequest().body("Invalid image number");

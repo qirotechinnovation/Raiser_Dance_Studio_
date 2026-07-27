@@ -18,6 +18,7 @@ public class Fee {
 	private String feeType; // ADMISSION or MONTHLY
 	private String feeMonth; // e.g. "January 2024"
 	private String batchName; // ✅ NEW
+	private Double paidAmount = 0.0; // ✅ NEW for partial payments
 
 	private LocalDate dueDate;
 	private LocalDate paidDate;
@@ -182,5 +183,13 @@ public class Fee {
 
 	public void setBatchName(String batchName) {
 		this.batchName = batchName;
+	}
+
+	public Double getPaidAmount() {
+		return paidAmount;
+	}
+
+	public void setPaidAmount(Double paidAmount) {
+		this.paidAmount = paidAmount;
 	}
 }

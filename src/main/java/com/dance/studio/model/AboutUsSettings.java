@@ -53,6 +53,7 @@ public class AboutUsSettings {
     private String image1Path;
     private String image2Path;
     private String image3Path;
+    private String directorImagePath;
 
     private LocalDateTime updatedAt;
 
@@ -223,5 +224,13 @@ public class AboutUsSettings {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getDirectorImagePath() {
+        return directorImagePath;
+    }
+
+    public void setDirectorImagePath(String directorImagePath) {
+        this.directorImagePath = directorImagePath;
     }
 }
