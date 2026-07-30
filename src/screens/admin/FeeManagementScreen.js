@@ -216,7 +216,10 @@ export default function FeeManagementScreen({ navigation }) {
     return (
         <BaseScreen 
             title="Fees" 
-            actions={[{ icon: 'plus', onPress: () => navigation.navigate('AddEditFee'), color: Colors.PRIMARY, size: 30 }]}
+            actions={[
+                { icon: 'file-document-outline', onPress: () => navigation.navigate('FeeReports'), color: Colors.PRIMARY, size: 26 },
+                { icon: 'plus', onPress: () => navigation.navigate('AddEditFee'), color: Colors.PRIMARY, size: 30 }
+            ]}
         >
             <View style={styles.summaryRow}>
                 {renderSummaryCard("Collected", stats.collected, "+12% vs last month", true)}

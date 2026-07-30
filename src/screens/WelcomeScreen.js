@@ -1451,7 +1451,8 @@ const styles = StyleSheet.create({
   feeMain: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14
+    gap: 14,
+    flex: 1
   },
   feeIconContainer: {
     width: 44,
@@ -1464,12 +1465,14 @@ const styles = StyleSheet.create({
     borderColor: Colors.BORDER
   },
   feeDetails: {
-    flexDirection: "column"
+    flexDirection: "column",
+    flex: 1
   },
   feePlanRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 8,
+    flexWrap: "wrap"
   },
   feePlan: {
     fontSize: 16,
@@ -1519,7 +1522,9 @@ const styles = StyleSheet.create({
   footerText: {
     color: Colors.TEXT_LIGHT,
     fontSize: 13,
-    textAlign: "center"
+    textAlign: "center",
+    flexShrink: 1,
+    flexWrap: "wrap"
   },
   copyright: {
     color: Colors.TEXT_DIM,
@@ -1698,6 +1703,7 @@ const styles = StyleSheet.create({
   },
   eventDetails: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     marginBottom: 14
   },
@@ -1705,12 +1711,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    flex: 1
+    minWidth: "48%",
+    marginBottom: 8
   },
   eventDetailValue: {
     fontSize: 12,
     color: Colors.TEXT_PRIMARY,
-    fontWeight: "500"
+    fontWeight: "500",
+    flex: 1,
+    flexWrap: "wrap"
   },
   eventDesc: {
     fontSize: 13.5,
@@ -1787,11 +1796,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 14
+    marginBottom: 14,
+    alignItems: "flex-start"
   },
   sangeetDetailItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 6,
     width: "48%",
     marginBottom: 8
@@ -1799,7 +1809,9 @@ const styles = StyleSheet.create({
   sangeetDetailValue: {
     fontSize: 12.5,
     color: Colors.TEXT_PRIMARY,
-    fontWeight: "500"
+    fontWeight: "500",
+    flex: 1,
+    flexWrap: "wrap"
   },
   sangeetPrice: {
     fontSize: 20,

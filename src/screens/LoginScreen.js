@@ -125,19 +125,16 @@ export default function LoginScreen({ navigation }) {
       style={{ flex: 1 }}
     >
       <LinearGradient colors={[Colors.PRIMARY, "#000000"]} style={styles.container}>
-        <ScrollView 
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
-          showsVerticalScrollIndicator={false}
-        >
-          <Animated.View style={[styles.circle1, { transform: [{ translateY: circle1Anim }] }]} />
-          <Animated.View style={[styles.circle2, { transform: [{ translateY: circle2Anim }] }]} />
+        <Animated.View style={[styles.circle1, { transform: [{ translateY: circle1Anim }] }]} />
+        <Animated.View style={[styles.circle2, { transform: [{ translateY: circle2Anim }] }]} />
 
-          <View style={styles.header}>
-            <Text style={styles.hello}>Welcome Back</Text>
-            <Text style={styles.signin}>Sign In</Text>
-          </View>
+        <View style={styles.header}>
+          <Text style={styles.hello}>Welcome Back</Text>
+          <Text style={styles.signin}>Sign In</Text>
+        </View>
 
-          <View style={styles.card}>
+        <View style={[styles.card, { flex: 1, marginTop: 10 }]}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
             <Text style={styles.label}>Email Address</Text>
             <TextInput
               style={styles.input}
@@ -151,7 +148,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Password</Text>
             <View style={styles.passwordContainer}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { flex: 1, marginTop: 0, borderWidth: 0, backgroundColor: 'transparent' }]}
                 placeholder="********"
                 placeholderTextColor="#aaa"
                 secureTextEntry={!showPassword}
@@ -162,8 +159,8 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-              <Text style={styles.forgot}></Text>
+            <TouchableOpacity onPress={() => Alert.alert("Forgot Password", "Please contact the admin to reset your password.")}>
+              <Text style={styles.forgot}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -194,8 +191,8 @@ export default function LoginScreen({ navigation }) {
               <Text style={{ color: '#aaa', fontSize: 13 }}>About </Text>
               <Text style={{ color: Colors.PRIMARY, fontSize: 13, fontWeight: 'bold' }}>Raiser's Dance Studio</Text>
             </TouchableOpacity>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </LinearGradient>
     </KeyboardAvoidingView>
   );

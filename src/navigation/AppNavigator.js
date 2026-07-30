@@ -12,6 +12,7 @@ import StudentManagementScreen from '../screens/admin/StudentManagementScreen';
 import AddStudentScreen from '../screens/admin/AddStudentScreen';
 import BatchManagementScreen from '../screens/admin/BatchManagementScreen';
 import FeeManagementScreen from '../screens/admin/FeeManagementScreen';
+import FeeReportsScreen from '../screens/admin/FeeReportsScreen';
 import DanceTypesManagementScreen from '../screens/admin/DanceTypesManagementScreen';
 import EventsManagementScreen from '../screens/admin/EventsManagementScreen';
 import FeeRemindersScreen from '../screens/admin/FeeRemindersScreen';
@@ -100,6 +101,7 @@ export default function AppNavigator() {
             <Stack.Screen name="AddStudent" component={AddStudentScreen} />
             <Stack.Screen name="BatchManagement" component={BatchManagementScreen} />
             <Stack.Screen name="FeeManagement" component={FeeManagementScreen} />
+            <Stack.Screen name="FeeReports" component={FeeReportsScreen} />
             <Stack.Screen name="DanceTypesManagement" component={DanceTypesManagementScreen} />
             <Stack.Screen name="EventsManagement" component={EventsManagementScreen} />
             <Stack.Screen name="FeeReminders" component={FeeRemindersScreen} />

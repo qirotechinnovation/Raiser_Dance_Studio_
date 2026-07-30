@@ -314,11 +314,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
-        elevation: 3,
-        shadowColor: Colors.PRIMARY,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        ...Colors.SHADOW_MEDIUM,
     },
     studioName: {
         fontSize: 28,
@@ -353,14 +349,10 @@ const styles = StyleSheet.create({
 
     card: {
         backgroundColor: Colors.WHITE,
-        borderRadius: 20,
+        borderRadius: Colors.RADIUS_CARD || 20,
         padding: 20,
         marginBottom: 15,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
+        ...Colors.SHADOW_LIGHT,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -376,7 +368,7 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 15,
         color: '#475569',
-        lineHeight: 24,
+        lineHeight: 26,
     },
     divider: {
         height: 1,

@@ -28,13 +28,12 @@ export default StyleSheet.create({
   },
 
   header: {
-    position: "absolute",
-    top: 80,
-    left: 30,
+    paddingHorizontal: 30,
+    marginTop: 80,
+    marginBottom: 20,
   },
 
   hello: {
-    paddingTop: 50,
     color: Colors.TEXT_WHITE,
     fontWeight: "bold",
     fontSize: 26,
@@ -42,11 +41,11 @@ export default StyleSheet.create({
   },
 
   signin: {
-    paddingTop: 50,
     color: Colors.TEXT_WHITE,
     fontSize: 36,
     fontWeight: "bold",
     lineHeight: 40,
+    marginTop: 5,
   },
 
   card: {
@@ -55,37 +54,40 @@ export default StyleSheet.create({
     borderTopRightRadius: 40,
     paddingHorizontal: 30,
     paddingTop: 40,
-    paddingBottom: 50,
-    marginTop: 20,
-    elevation: 10,
-    shadowColor: Colors.SHADOW,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    ...Colors.SHADOW_MEDIUM,
   },
 
   label: {
-    color: Colors.PRIMARY,
-    fontSize: 16,
-    marginTop: 20,
-    fontWeight: "600",
+    color: Colors.TEXT_SECONDARY,
+    fontSize: 13,
+    marginTop: 16,
+    marginBottom: 6,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
 
   input: {
-    flex: 1,
-    paddingVertical: 10,
-    fontSize: 18,
+    backgroundColor: "#F1F5F9",
+    borderRadius: Colors.RADIUS_INPUT || 12,
+    paddingHorizontal: 15,
+    height: 55,
     color: Colors.TEXT_DARK,
-    fontWeight: "500",
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: Colors.BORDER,
+    justifyContent: 'center',
   },
 
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1.5,
-    borderBottomColor: Colors.BORDER,
+    backgroundColor: "#F1F5F9",
+    borderRadius: Colors.RADIUS_INPUT || 12,
+    borderWidth: 1,
+    borderColor: Colors.BORDER,
+    height: 55,
+    overflow: "hidden",
   },
 
   eyeIcon: {
@@ -107,7 +109,7 @@ export default StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     marginTop: 10,
-    elevation: 3,
+    ...Colors.SHADOW_LIGHT,
   },
 
   buttonText: {

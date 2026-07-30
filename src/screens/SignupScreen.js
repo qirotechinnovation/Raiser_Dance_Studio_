@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, StatusBar, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, StatusBar, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import API from "../api/axios";
@@ -69,8 +69,12 @@ export default function StudentSignupScreen({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={Colors.GRADIENT_MAIN} style={styles.container}>
-      <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <LinearGradient colors={Colors.GRADIENT_MAIN} style={styles.container}>
+        <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
 
       {/* Back Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -83,7 +87,7 @@ export default function StudentSignupScreen({ navigation }) {
       </View>
 
       <View style={styles.card}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
 
           <Text style={styles.label}>Full Name</Text>
           <TextInput style={styles.input} placeholder="e.g. Isabella Rossi" placeholderTextColor="#aaa" value={name} onChangeText={setName} />
@@ -117,7 +121,7 @@ export default function StudentSignupScreen({ navigation }) {
           <Text style={styles.label}>Password</Text>
           <View style={styles.passwordContainer}>
             <TextInput
-              style={[styles.input, { flex: 1, borderBottomWidth: 0, height: 50 }]}
+              style={[styles.input, { flex: 1, borderWidth: 0, marginTop: 0, backgroundColor: 'transparent' }]}
               placeholder="••••••••"
               placeholderTextColor="#aaa"
               secureTextEntry={!showPassword}
@@ -132,7 +136,7 @@ export default function StudentSignupScreen({ navigation }) {
           <Text style={styles.label}>Confirm Password</Text>
           <View style={styles.passwordContainer}>
             <TextInput
-              style={[styles.input, { flex: 1, borderBottomWidth: 0, height: 50 }]}
+              style={[styles.input, { flex: 1, borderWidth: 0, marginTop: 0, backgroundColor: 'transparent' }]}
               placeholder="••••••••"
               placeholderTextColor="#aaa"
               secureTextEntry={!showConfirmPassword}
@@ -220,6 +224,7 @@ export default function StudentSignupScreen({ navigation }) {
         </ScrollView>
       </View>
     </LinearGradient>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -234,31 +239,40 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: Colors.BG_CARD,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
     paddingHorizontal: 25,
     paddingTop: 30,
   },
-  label: { fontSize: 12, fontWeight: "bold", color: Colors.TEXT_SECONDARY, marginBottom: 8, marginTop: 15, textTransform: 'uppercase' },
+  label: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.TEXT_SECONDARY,
+    marginBottom: 6,
+    marginTop: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8
+  },
   input: {
     backgroundColor: "#F1F5F9",
-    borderRadius: 12,
+    borderRadius: Colors.RADIUS_INPUT || 12,
     paddingHorizontal: 15,
-    height: 50,
+    height: 55,
     color: Colors.TEXT_DARK,
     fontSize: 16,
     borderWidth: 1,
     borderColor: Colors.BORDER,
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: "#F1F5F9",
-    borderRadius: 12,
+    borderRadius: Colors.RADIUS_INPUT || 12,
     borderWidth: 1,
     borderColor: Colors.BORDER,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    height: 55,
   },
   eyeIcon: {
     paddingHorizontal: 15,
@@ -287,8 +301,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    height: 50,
+    borderRadius: Colors.RADIUS_INPUT || 12,
+    height: 55,
     borderWidth: 1,
     borderColor: Colors.BORDER,
     paddingHorizontal: 12,

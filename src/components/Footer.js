@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import Colors from '../theme/Colors';
 
 const Footer = () => {
   return (
     <View style={styles.container}>
       <View style={styles.line} />
-      <Text style={styles.text}> <a href="https://qirotec.com">Powerd By Qiro Tech</a></Text>
+      <Text style={styles.text} onPress={() => Linking.openURL('https://qirotec.com')}>Powered By Qiro Tech</Text>
       <Text style={[styles.text, { marginTop: 4 }]}>Copyright © 2026</Text>
     </View>
   );

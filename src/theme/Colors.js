@@ -43,8 +43,26 @@ const Colors = {
   INFO:    '#2563EB',
   ERROR:   '#EF4444',
 
-  // ── Shadow ────────────────────────────────────────────────────
+  // ── Shadows & Aesthetics ───────────────────────────────────────
   SHADOW: '#000000',
+  SHADOW_LIGHT: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  SHADOW_MEDIUM: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+
+  // ── Radii ─────────────────────────────────────────────────────
+  RADIUS_CARD: 20,
+  RADIUS_INPUT: 12,
 };
 
 export default Colors;
