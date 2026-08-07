@@ -185,6 +185,8 @@ public class AdminFeeController {
         if (newPaidAmount >= fee.getAmount()) {
             fee.setStatus("PAID");
             fee.setPaidDate(LocalDate.now());
+        } else if (newPaidAmount > 0) {
+            fee.setStatus("PARTIAL");
         }
 
         Fee saved = feeRepo.save(fee);
@@ -246,7 +248,7 @@ public class AdminFeeController {
     // ✅ PENDING FEES (ADMIN DASH)
     @GetMapping("/pending")
     public List<Fee> pendingFees() {
-        return feeRepo.findByStatus("UNPAID");
+        return feeRepo.findAllPendingOrPartialFees();
     }
 
     // ✅ SEND REMINDER
@@ -255,8 +257,8 @@ public class AdminFeeController {
         Fee fee = feeRepo.findById(feeId)
                 .orElseThrow(() -> new RuntimeException("Fee not found"));
 
-        if (!"UNPAID".equals(fee.getStatus())) {
-            throw new RuntimeException("Fee is already paid");
+        if ("PAID".equalsIgnoreCase(fee.getStatus())) {
+            throw new RuntimeException("Fee is already fully paid");
         }
 
         fee.setLastReminderSent(LocalDate.now());
@@ -288,7 +290,7 @@ public class AdminFeeController {
     // ✅ DAILY PENDING LIST FOR ADMIN
     @GetMapping("/daily-summary")
     public List<String> getDailySummary() {
-        List<Fee> pending = feeRepo.findByStatusAndDueDateLessThanEqual("UNPAID", LocalDate.now());
+        List<Fee> pending = feeRepo.findPendingOrPartialFeesDueOnOrBefore(LocalDate.now());
         return pending.stream()
                 .map(f -> f.getStudent().getName() + ": " + f.getAmount() + " (Due: " + f.getDueDate() + ")")
                 .collect(Collectors.toList());

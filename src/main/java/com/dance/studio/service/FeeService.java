@@ -62,10 +62,10 @@ public class FeeService {
     }
 
     public List<Fee> pendingFees() {
-        return repo.findByStatus("UNPAID");
+        return repo.findAllPendingOrPartialFees();
     }
 
     public List<Fee> dueFees() {
-        return repo.findByStatusAndDueDateBefore("UNPAID", LocalDate.now());
+        return repo.findPendingOrPartialFeesDueOnOrBefore(LocalDate.now());
     }
 }

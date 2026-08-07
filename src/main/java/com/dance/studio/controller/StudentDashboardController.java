@@ -164,7 +164,7 @@ public class StudentDashboardController {
             Double pendingAmount = 0.0;
             try {
                 java.util.List<com.dance.studio.model.Fee> unpaidFees = feeRepo.findByStudentId(id).stream()
-                        .filter(f -> "UNPAID".equalsIgnoreCase(f.getStatus()))
+                        .filter(f -> f != null && !"PAID".equalsIgnoreCase(f.getStatus()))
                         .collect(java.util.stream.Collectors.toList());
 
                 if (!unpaidFees.isEmpty()) {

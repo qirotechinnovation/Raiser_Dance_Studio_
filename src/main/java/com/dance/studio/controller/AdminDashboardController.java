@@ -77,7 +77,7 @@ public class AdminDashboardController {
             LocalDate today = LocalDate.now();
             List<Fee> pendingFeesList = new ArrayList<>();
             try {
-                pendingFeesList = feeRepo.findByStatus("UNPAID");
+                pendingFeesList = feeRepo.findAllPendingOrPartialFees();
             } catch (Exception e) {
                 // Ignore
             }

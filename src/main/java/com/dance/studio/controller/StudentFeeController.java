@@ -59,7 +59,7 @@ public class StudentFeeController {
             
             history.add(item);
 
-            if ("UNPAID".equalsIgnoreCase(f.getStatus())) {
+            if (!"PAID".equalsIgnoreCase(f.getStatus())) {
                 double currentPaid = f.getPaidAmount() != null ? f.getPaidAmount() : 0.0;
                 pendingAmount += Math.max(0, f.getAmount() - currentPaid);
                 
