@@ -246,7 +246,7 @@ public class AdminFeeController {
     // ✅ PENDING FEES (ADMIN DASH)
     @GetMapping("/pending")
     public List<Fee> pendingFees() {
-        return feeRepo.findByStatusAndDueDateLessThanEqual("UNPAID", LocalDate.now());
+        return feeRepo.findByStatus("UNPAID");
     }
 
     // ✅ SEND REMINDER

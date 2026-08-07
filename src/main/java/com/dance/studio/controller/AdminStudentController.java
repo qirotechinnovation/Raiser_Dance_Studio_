@@ -17,15 +17,18 @@ public class AdminStudentController {
     private final com.dance.studio.repository.BatchRepository batchRepo;
     private final com.dance.studio.repository.DanceTypeRepository danceRepo;
     private final com.dance.studio.repository.UserRepository userRepo;
+    private final com.dance.studio.repository.FeeRepository feeRepo;
 
     public AdminStudentController(StudentRepository repo,
             com.dance.studio.repository.BatchRepository batchRepo,
             com.dance.studio.repository.DanceTypeRepository danceRepo,
-            com.dance.studio.repository.UserRepository userRepo) {
+            com.dance.studio.repository.UserRepository userRepo,
+            com.dance.studio.repository.FeeRepository feeRepo) {
         this.repo = repo;
         this.batchRepo = batchRepo;
         this.danceRepo = danceRepo;
         this.userRepo = userRepo;
+        this.feeRepo = feeRepo;
     }
 
     @PostMapping
@@ -75,7 +78,28 @@ public class AdminStudentController {
         }
 
         // 5. Save Student
-        return repo.save(s);
+        Student savedStudent = repo.save(s);
+
+        // 6. Automatically generate initial Fee record if specified or needed
+        if (savedStudent.getFeePlan() != null || savedStudent.getAdmissionFee() > 0) {
+            double amount = savedStudent.getAdmissionFee() > 0 ? savedStudent.getAdmissionFee() : 1600.0;
+            String plan = savedStudent.getFeePlan() != null ? savedStudent.getFeePlan() : "MONTHLY";
+            com.dance.studio.model.Fee fee = new com.dance.studio.model.Fee();
+            fee.setStudent(savedStudent);
+            fee.setAmount(amount);
+            fee.setPlan(plan);
+            fee.setFeeType("ADMISSION");
+            fee.setStatus("UNPAID");
+            fee.setDueDate(java.time.LocalDate.now().plusMonths(1));
+            if (savedStudent.getBatch() != null) {
+                fee.setBatchName(savedStudent.getBatch().getName());
+            }
+            feeRepo.save(fee);
+            savedStudent.setTotalOutstanding(amount);
+            repo.save(savedStudent);
+        }
+
+        return savedStudent;
     }
 
     @PutMapping("/{id}")

@@ -77,7 +77,7 @@ public class AdminDashboardController {
             LocalDate today = LocalDate.now();
             List<Fee> pendingFeesList = new ArrayList<>();
             try {
-                pendingFeesList = feeRepo.findByStatusAndDueDateLessThanEqual("UNPAID", today);
+                pendingFeesList = feeRepo.findByStatus("UNPAID");
             } catch (Exception e) {
                 // Ignore
             }
@@ -88,7 +88,7 @@ public class AdminDashboardController {
             if (pendingFeesList != null) {
                 pendingAmount = pendingFeesList.stream()
                         .filter(f -> f != null)
-                        .mapToDouble(Fee::getAmount)
+                        .mapToDouble(f -> Math.max(0, f.getAmount() - (f.getPaidAmount() != null ? f.getPaidAmount() : 0.0)))
                         .sum();
             }
             data.put("pendingFeesAmount", pendingAmount);

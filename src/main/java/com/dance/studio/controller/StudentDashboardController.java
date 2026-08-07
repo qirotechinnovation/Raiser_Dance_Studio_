@@ -165,12 +165,13 @@ public class StudentDashboardController {
             try {
                 java.util.List<com.dance.studio.model.Fee> unpaidFees = feeRepo.findByStudentId(id).stream()
                         .filter(f -> "UNPAID".equalsIgnoreCase(f.getStatus()))
-                        .filter(f -> f.getDueDate() == null || !f.getDueDate().isAfter(LocalDate.now()))
                         .collect(java.util.stream.Collectors.toList());
 
                 if (!unpaidFees.isEmpty()) {
                     isPending = true;
-                    pendingAmount = unpaidFees.stream().mapToDouble(f -> f.getAmount()).sum();
+                    pendingAmount = unpaidFees.stream()
+                            .mapToDouble(f -> Math.max(0, f.getAmount() - (f.getPaidAmount() != null ? f.getPaidAmount() : 0.0)))
+                            .sum();
                 }
             } catch (Exception e) {
                 System.out.println("Error checking fees: " + e.getMessage());
