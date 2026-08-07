@@ -19,6 +19,7 @@ public class Fee {
 	private String feeMonth; // e.g. "January 2024"
 	private String batchName; // ✅ NEW
 	private Double paidAmount = 0.0; // ✅ NEW for partial payments
+	private boolean autoRenewNextCycle = true; // ✅ NEW for next month/cycle continuation
 
 	private LocalDate dueDate;
 	private LocalDate paidDate;
@@ -191,5 +192,13 @@ public class Fee {
 
 	public void setPaidAmount(Double paidAmount) {
 		this.paidAmount = paidAmount;
+	}
+
+	public boolean isAutoRenewNextCycle() {
+		return autoRenewNextCycle;
+	}
+
+	public void setAutoRenewNextCycle(boolean autoRenewNextCycle) {
+		this.autoRenewNextCycle = autoRenewNextCycle;
 	}
 }

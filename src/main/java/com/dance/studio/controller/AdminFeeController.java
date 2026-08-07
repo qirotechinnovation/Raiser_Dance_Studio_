@@ -98,6 +98,10 @@ public class AdminFeeController {
         fee.setFeeType(feeDetails.getFeeType());
         fee.setFeeMonth(feeDetails.getFeeMonth());
         fee.setBatchName(feeDetails.getBatchName());
+        if (feeDetails.getPaidAmount() != null) {
+            fee.setPaidAmount(feeDetails.getPaidAmount());
+        }
+        fee.setAutoRenewNextCycle(feeDetails.isAutoRenewNextCycle());
 
         Fee saved = feeRepo.save(fee);
 
@@ -199,12 +203,13 @@ public class AdminFeeController {
             student.setTotalOutstanding(Math.max(0, currentOutstanding - paymentVal));
             studentRepo.save(student);
 
-            if ("PAID".equalsIgnoreCase(saved.getStatus())) {
-                // Auto-generate next fee record as UNPAID
+            if ("PAID".equalsIgnoreCase(saved.getStatus()) && saved.isAutoRenewNextCycle()) {
+                // Auto-generate next fee record as UNPAID for student who is continuing
                 Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
                         fee.getPlan(), "UNPAID", fee.getFeeType(), fee.getFeeMonth(), calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
                         null, student, null, null, null, null, null);
                 nextFee.setBatchName(fee.getBatchName());
+                nextFee.setAutoRenewNextCycle(true);
                 feeRepo.save(nextFee);
 
                 // Mark old Fee Reminders as read

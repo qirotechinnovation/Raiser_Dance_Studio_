@@ -45,3 +45,8 @@ app_run.log
 
 # Uploads and temporary data
 uploads/
+
+# Secret / credentials keys
+*-firebase-adminsdk-*.json
+*.json
+
