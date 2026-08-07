@@ -19,6 +19,7 @@ export default function AddEditFeeScreen({ navigation, route }) {
     const [formData, setFormData] = useState({
         studentId: existingFee?.student?.id || "",
         amount: existingFee?.amount?.toString() || "",
+        paidAmount: existingFee?.paidAmount?.toString() || "0",
         plan: existingFee?.plan || "Monthly",
         discountPercent: existingFee?.discountPercent?.toString() || "0",
         dueDate: existingFee?.dueDate || new Date().toISOString().split('T')[0],
@@ -26,7 +27,8 @@ export default function AddEditFeeScreen({ navigation, route }) {
         status: existingFee?.status || "UNPAID",
         feeType: existingFee?.feeType || "Monthly Fee",
         feeMonth: existingFee?.feeMonth || new Date().toLocaleString('default', { month: 'long' }),
-        batchName: existingFee?.batchName || ""
+        batchName: existingFee?.batchName || "",
+        autoRenewNextCycle: existingFee?.autoRenewNextCycle !== false ? "YES" : "NO"
     });
 
     const fetchFeeStructure = React.useCallback(async () => {
@@ -103,17 +105,30 @@ export default function AddEditFeeScreen({ navigation, route }) {
 
         setLoading(true);
         try {
+            const totalAmt = parseFloat(formData.amount) || 0;
+            const paidAmt = parseFloat(formData.paidAmount) || 0;
+            
+            // Auto compute status if user partially paid
+            let computedStatus = formData.status;
+            if (paidAmt >= totalAmt && totalAmt > 0) {
+                computedStatus = "PAID";
+            } else if (paidAmt > 0 && paidAmt < totalAmt) {
+                computedStatus = "PARTIAL";
+            }
+
             const payload = {
                 id: isEdit ? existingFee.id : undefined,
-                amount: parseFloat(formData.amount),
+                amount: totalAmt,
+                paidAmount: paidAmt,
                 plan: formData.plan,
                 discountPercent: parseFloat(formData.discountPercent) || 0,
                 dueDate: formData.dueDate,
                 remarks: formData.remarks,
-                status: formData.status,
+                status: computedStatus,
                 feeType: formData.feeType,
                 feeMonth: formData.feeMonth,
-                batchName: formData.batchName
+                batchName: formData.batchName,
+                autoRenewNextCycle: formData.autoRenewNextCycle === "YES"
             };
 
             if (isEdit) {
@@ -237,9 +252,9 @@ export default function AddEditFeeScreen({ navigation, route }) {
                             </Picker>
                         </View>
 
-                        <Text style={styles.sectionLabel}>AMOUNT & DATES</Text>
+                        <Text style={styles.sectionLabel}>AMOUNT & PAYMENTS</Text>
                         <InputField
-                            label="Amount (₹) *"
+                            label="Total Plan Amount (₹) *"
                             value={formData.amount}
                             onChange={(v) => setFormData({ ...formData, amount: v })}
                             icon="currency-inr"
@@ -249,6 +264,16 @@ export default function AddEditFeeScreen({ navigation, route }) {
                         <View style={styles.row}>
                             <View style={{ flex: 1 }}>
                                 <InputField
+                                    label="Paid Amount (₹) [Partial]"
+                                    value={formData.paidAmount}
+                                    onChange={(v) => setFormData({ ...formData, paidAmount: v })}
+                                    icon="cash-check"
+                                    keyboardType="numeric"
+                                />
+                            </View>
+                            <View style={{ width: 15 }} />
+                            <View style={{ flex: 1 }}>
+                                <InputField
                                     label="Discount (%)"
                                     value={formData.discountPercent}
                                     onChange={(v) => setFormData({ ...formData, discountPercent: v })}
@@ -256,28 +281,55 @@ export default function AddEditFeeScreen({ navigation, route }) {
                                     keyboardType="numeric"
                                 />
                             </View>
-                            <View style={{ width: 20 }} />
-                            <View style={{ flex: 1 }}>
-                                <InputField
-                                    label="Due Date *"
-                                    value={formData.dueDate}
-                                    onChange={(v) => setFormData({ ...formData, dueDate: v })}
-                                    icon="calendar-outline"
-                                    placeholder="YYYY-MM-DD"
-                                />
-                            </View>
                         </View>
 
-                        <Text style={styles.sectionLabel}>PAYMENT STATUS</Text>
+                        {/* Calculated Balance Preview */}
+                        {formData.amount !== "" && (
+                            <View style={{ backgroundColor: '#FFF1F2', padding: 12, borderRadius: 12, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: Colors.PRIMARY }}>
+                                <Text style={{ fontSize: 13, color: Colors.TEXT_PRIMARY, fontWeight: '600' }}>
+                                    Remaining Fee Pending: <Text style={{ color: Colors.PRIMARY, fontWeight: 'bold', fontSize: 15 }}>₹{Math.max(0, (parseFloat(formData.amount) || 0) - (parseFloat(formData.paidAmount) || 0))}</Text>
+                                </Text>
+                                <Text style={{ fontSize: 11, color: Colors.TEXT_MUTED, marginTop: 2 }}>
+                                    {(parseFloat(formData.paidAmount) || 0) > 0 && (parseFloat(formData.paidAmount) || 0) < (parseFloat(formData.amount) || 0)
+                                        ? "Status will be marked as PARTIAL (Pending Dues)"
+                                        : (parseFloat(formData.paidAmount) || 0) >= (parseFloat(formData.amount) || 0) && (parseFloat(formData.amount) || 0) > 0
+                                        ? "Status will be marked as PAID"
+                                        : "Status will be UNPAID"}
+                                </Text>
+                            </View>
+                        )}
+
+                        <InputField
+                            label="Due Date *"
+                            value={formData.dueDate}
+                            onChange={(v) => setFormData({ ...formData, dueDate: v })}
+                            icon="calendar-outline"
+                            placeholder="YYYY-MM-DD"
+                        />
+
+                        <Text style={styles.sectionLabel}>CONTINUATION & STATUS</Text>
                         <View style={styles.pickerContainer}>
-                            <Text style={styles.pickerLabel}>Status</Text>
+                            <Text style={styles.pickerLabel}>Next Month / Cycle Continuation</Text>
+                            <Picker
+                                selectedValue={formData.autoRenewNextCycle}
+                                onValueChange={(v) => setFormData({ ...formData, autoRenewNextCycle: v })}
+                                style={{ color: Colors.TEXT_PRIMARY }}
+                            >
+                                <Picker.Item label="Yes - Continue Next Month/Cycle (Auto-Renew)" value="YES" />
+                                <Picker.Item label="No - Pause/Discontinue Next Month" value="NO" />
+                            </Picker>
+                        </View>
+
+                        <View style={styles.pickerContainer}>
+                            <Text style={styles.pickerLabel}>Manual Status Override</Text>
                             <Picker
                                 selectedValue={formData.status}
                                 onValueChange={(v) => setFormData({ ...formData, status: v })}
                                 style={{ color: Colors.TEXT_PRIMARY }}
                             >
-                                <Picker.Item label="Unpaid" value="UNPAID" />
-                                <Picker.Item label="Paid" value="PAID" />
+                                <Picker.Item label="Unpaid / Pending" value="UNPAID" />
+                                <Picker.Item label="Partial Payment" value="PARTIAL" />
+                                <Picker.Item label="Fully Paid" value="PAID" />
                             </Picker>
                         </View>
 

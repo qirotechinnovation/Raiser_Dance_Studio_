@@ -82,7 +82,7 @@ export const displayNotification = async (remoteMessage) => {
     android: {
       channelId:   isImportant ? CHANNEL_ID_IMPORTANT : CHANNEL_ID_DEFAULT,
       importance:  isImportant ? AndroidImportance.HIGH : AndroidImportance.DEFAULT,
-      smallIcon:   'ic_notification',        // drawable resource name (fallback to app icon if missing)
+      smallIcon:   'ic_launcher',        // app launcher icon
       color:       '#C62A47',                // brand red
       pressAction: { id: 'default' },
       style: body.length > 60

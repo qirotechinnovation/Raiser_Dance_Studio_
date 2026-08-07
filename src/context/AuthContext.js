@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(parsedUser);
                 const storedStudentId = await AsyncStorage.getItem("studentId");
                 await loadFamilyProfiles(storedStudentId || parsedUser.studentId);
+                setActiveProfile({ id: parsedUser.id || 'main', name: parsedUser.name || parsedUser.username || 'Main User', isMain: true });
             }
         } catch (e) {
             console.log("Error loading user", e);
@@ -75,7 +76,7 @@ export const AuthProvider = ({ children }) => {
             
             setUser(userData);
             await loadFamilyProfiles(userData?.studentId);
-            setActiveProfile(null); // Reset active profile on new login
+            setActiveProfile({ id: userData?.id || 'main', name: userData?.name || userData?.username || 'Main User', isMain: true });
         } catch (e) {
             console.log("Login error", e);
         }

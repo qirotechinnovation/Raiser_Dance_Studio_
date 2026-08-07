@@ -163,14 +163,24 @@ export default function MyFees({ navigation }) {
                 <Text style={styles.statValue}>{summary.nextDue || "N/A"}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.statLabel}>Pending Amount</Text>
-                <Text style={[styles.statValue, { color: Colors.PRIMARY }]}>₹{summary.pending || "0.00"}</Text>
+                <Text style={styles.statLabel}>Pending Fee Dues</Text>
+                <Text style={[styles.statValue, { color: Colors.PRIMARY }]}>
+                  ₹{summary.pending || "0.00"}
+                </Text>
               </View>
             </View>
 
+            {(summary.paidAmount > 0 && summary.pending > 0) && (
+              <View style={{ backgroundColor: '#FEF3C7', padding: 10, borderRadius: 12, marginTop: 12 }}>
+                <Text style={{ fontSize: 12, color: '#92400E', fontWeight: 'bold' }}>
+                  Partial Payment Active: Paid ₹{summary.paidAmount} | Remaining Due: ₹{summary.pending}
+                </Text>
+              </View>
+            )}
+
             {(summary.pending && parseFloat(summary.pending) > 0) && (
               <TouchableOpacity style={styles.payBtn} onPress={() => alert("Payment Gateway Integration")}>
-                <Text style={styles.payBtnText}>Pay Now</Text>
+                <Text style={styles.payBtnText}>Pay Pending Dues (₹{summary.pending})</Text>
                 <Icon name="arrow-right" size={20} color={Colors.WHITE} />
               </TouchableOpacity>
             )}
@@ -183,6 +193,33 @@ export default function MyFees({ navigation }) {
             </View>
           </View>
         )}
+
+        {/* Next Cycle Continuation Status Card */}
+        <View style={{ backgroundColor: '#F0F9FF', borderRadius: 20, padding: 20, marginBottom: 25, borderWidth: 1, borderColor: '#BAE6FD' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Icon name="sync" size={24} color="#0284C7" />
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0369A1', marginLeft: 10 }}>
+              Next Cycle Continuation
+            </Text>
+          </View>
+          <Text style={{ fontSize: 13, color: '#0284C7', lineHeight: 18, marginBottom: 12 }}>
+            Will you continue your dance classes for the next month/quarter? Auto-renewal generates your upcoming bill seamlessly.
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity 
+              style={{ flex: 1, backgroundColor: '#0284C7', paddingVertical: 10, borderRadius: 12, alignItems: 'center' }}
+              onPress={() => alert("Continuation confirmed! Next month fee will auto-generate.")}
+            >
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 13 }}>✓ Yes, Continuing</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={{ flex: 1, backgroundColor: '#E0F2FE', paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#7DD3FC' }}
+              onPress={() => alert("Pause requested. Admin will be notified.")}
+            >
+              <Text style={{ color: '#0369A1', fontWeight: 'bold', fontSize: 13 }}>Pause Next Month</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Payment History */}
         <Text style={styles.sectionTitle}>Payment History</Text>

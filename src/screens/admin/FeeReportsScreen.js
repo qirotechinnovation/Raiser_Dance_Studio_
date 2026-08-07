@@ -32,8 +32,8 @@ export default function FeeReportsScreen({ navigation }) {
     const fetchReportData = async () => {
         setLoading(true);
         try {
-            const allRes = await adminService.getAllFees();
-            const allFees = allRes.data || [];
+            const allRes = await adminService.getAllFees().catch(() => ({ data: [] }));
+            const allFees = Array.isArray(allRes?.data) ? allRes.data : [];
 
             const monthIndex = MONTHS.indexOf(selectedMonth);
 

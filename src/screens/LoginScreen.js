@@ -128,13 +128,17 @@ export default function LoginScreen({ navigation }) {
         <Animated.View style={[styles.circle1, { transform: [{ translateY: circle1Anim }] }]} />
         <Animated.View style={[styles.circle2, { transform: [{ translateY: circle2Anim }] }]} />
 
-        <View style={styles.header}>
-          <Text style={styles.hello}>Welcome Back</Text>
-          <Text style={styles.signin}>Sign In</Text>
-        </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Text style={styles.hello}>Welcome Back</Text>
+            <Text style={styles.signin}>Sign In</Text>
+          </View>
 
-        <View style={[styles.card, { flex: 1, marginTop: 10 }]}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
+          <View style={styles.card}>
             <Text style={styles.label}>Email Address</Text>
             <TextInput
               style={styles.input}
@@ -191,8 +195,8 @@ export default function LoginScreen({ navigation }) {
               <Text style={{ color: '#aaa', fontSize: 13 }}>About </Text>
               <Text style={{ color: Colors.PRIMARY, fontSize: 13, fontWeight: 'bold' }}>Raiser's Dance Studio</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </View>
+          </View>
+        </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
   );

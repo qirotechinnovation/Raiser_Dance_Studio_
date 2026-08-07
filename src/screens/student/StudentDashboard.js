@@ -203,13 +203,13 @@ export default function StudentDashboard({ navigation }) {
       const studentId = await AsyncStorage.getItem("studentId");
       if (studentId) {
         const [dashboardRes, profileRes] = await Promise.all([
-          studentService.getDashboard(studentId),
+          studentService.getDashboard(studentId).catch(() => ({ data: {} })),
           studentService.getProfile(studentId).catch(() => ({ data: {} })),
         ]);
 
-        const data = dashboardRes.data;
+        const data = dashboardRes.data || {};
         // Fetch holidays based on batch if available
-        const holidayRes = await studentService.getUpcomingHolidays(data.batchId).catch(() => ({ data: [] }));
+        const holidayRes = data.batchId ? await studentService.getUpcomingHolidays(data.batchId).catch(() => ({ data: [] })) : { data: [] };
         const profData = profileRes.data || {};
         const baseURL = API.defaults.baseURL;
 
@@ -238,11 +238,23 @@ export default function StudentDashboard({ navigation }) {
         });
         setHolidays(holidayRes.data || []);
         setHighlights(data.highlights || []);
-        runEntranceAnim();
+      } else {
+        setDashboardData(prev => prev || {
+          name: "Student",
+          batchName: "General Batch",
+          batchTime: "Check Schedule",
+          instructor: "Instructor",
+          isPaid: true,
+          pendingAmount: 0,
+          attendanceCount: 0,
+          attendanceRate: 0,
+          latestUpdates: []
+        });
       }
     } catch (error) {
       console.error("Failed to fetch dashboard", error);
     } finally {
+      runEntranceAnim();
       setLoading(false);
       setRefreshing(false);
     }

@@ -4,7 +4,12 @@ import Colors from "../theme/Colors";
 export default StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-end",
+  },
+
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 20,
   },
 
   circle1: {
@@ -13,7 +18,7 @@ export default StyleSheet.create({
     height: 170,
     backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 100,
-    top: 90,
+    top: 40,
     left: -40,
   },
 
@@ -23,14 +28,14 @@ export default StyleSheet.create({
     height: 230,
     backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 130,
-    top: 230,
+    top: 180,
     right: -90,
   },
 
   header: {
-    paddingHorizontal: 30,
-    marginTop: 80,
-    marginBottom: 20,
+    paddingHorizontal: 25,
+    marginBottom: 15,
+    marginTop: 10,
   },
 
   hello: {
@@ -50,11 +55,16 @@ export default StyleSheet.create({
 
   card: {
     backgroundColor: Colors.BG_CARD,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingHorizontal: 30,
-    paddingTop: 40,
-    ...Colors.SHADOW_MEDIUM,
+    borderRadius: 32,
+    paddingHorizontal: 25,
+    paddingTop: 28,
+    paddingBottom: 28,
+    marginHorizontal: 16,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
 
   label: {

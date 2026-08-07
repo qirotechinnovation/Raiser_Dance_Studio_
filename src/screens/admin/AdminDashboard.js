@@ -113,48 +113,49 @@ export default function AdminDashboard({ navigation }) {
     ]);
   };
 
+  const runEntranceAnim = () => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.stagger(100, sectionAnims.map(anim =>
+        Animated.spring(anim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true
+        })
+      ))
+    ]).start();
+  };
+
   const fetchDashboard = async () => {
     try {
       const adminId = await AsyncStorage.getItem("userId");
-      if (adminId) {
-        const [dashRes, profRes, notifRes, usersRes] = await Promise.all([
-          adminService.getDashboard(adminId),
-          adminService.getAdminProfile(adminId).catch(() => ({ data: {} })),
-          adminService.getUnreadNotifications().catch(() => ({ data: [] })),
-          adminService.getUsers().catch(() => ({ data: [] }))
-        ]);
+      const [dashRes, profRes, notifRes, usersRes] = await Promise.all([
+        adminService.getDashboard(adminId || null).catch(() => ({ data: {} })),
+        adminId ? adminService.getAdminProfile(adminId).catch(() => ({ data: {} })) : Promise.resolve({ data: {} }),
+        adminService.getUnreadNotifications().catch(() => ({ data: [] })),
+        adminService.getUsers().catch(() => ({ data: [] }))
+      ]);
 
-        if (usersRes?.data) setUsers(usersRes.data);
+      if (usersRes?.data) setUsers(usersRes.data);
+      if (notifRes && notifRes.data) setUnreadCount(notifRes.data.length);
 
-        if (notifRes && notifRes.data) setUnreadCount(notifRes.data.length);
+      const dashData = dashRes.data || {};
+      const profData = profRes.data || {};
+      const baseURL = API.defaults.baseURL;
 
-        const dashData = dashRes.data || {};
-        const profData = profRes.data || {};
-        const baseURL = API.defaults.baseURL;
-
-        setData({
-          ...dashData,
-          adminAvatar: profData.profilePic || profData.avatar
-            ? `${baseURL}/uploads/profiles/${profData.profilePic || profData.avatar}`
-            : 'https://randomuser.me/api/portraits/women/65.jpg'
-        });
-
-        Animated.parallel([
-          Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-          Animated.stagger(100, sectionAnims.map(anim =>
-            Animated.spring(anim, {
-              toValue: 1,
-              tension: 50,
-              friction: 7,
-              useNativeDriver: true
-            })
-          ))
-        ]).start();
-      }
+      setData({
+        ...dashData,
+        adminAvatar: profData.profilePic || profData.avatar
+          ? `${baseURL}/uploads/profiles/${profData.profilePic || profData.avatar}`
+          : 'https://randomuser.me/api/portraits/women/65.jpg'
+      });
     } catch (error) {
       console.error("Error fetching dashboard:", error);
+      setData(prev => prev || {});
     } finally {
+      runEntranceAnim();
       setLoading(false);
       setRefreshing(false);
     }

@@ -166,41 +166,70 @@ export default function StudentDetailsScreen({ navigation, route }) {
                     </View>
                 </View>
 
-                {/* Fee History */}
+                {/* Fee History & Continuation Status */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Fee History</Text>
-                    <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+                    <Text style={styles.sectionTitle}>Fee History & Status</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate("FeeManagement")}><Text style={styles.viewAllText}>Manage Dues</Text></TouchableOpacity>
                 </View>
 
-                {fees.map((fee, index) => (
-                    <View key={index} style={styles.feeCard}>
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                                <Text style={styles.feeAmount}>${fee.amount}</Text>
-                                <View style={styles.paidBadge}>
-                                    <Text style={styles.paidText}>PAID</Text>
-                                </View>
-                            </View>
-                            <Text style={styles.feePlan}>{fee.plan}</Text>
-                            <Text style={styles.feeDetail}>Paid via {fee.method} • {fee.date}</Text>
+                {fees.map((fee, index) => {
+                    const isPaid = fee.status?.toUpperCase() === 'PAID';
+                    const isPartial = fee.status?.toUpperCase() === 'PARTIAL' || (fee.paidAmount > 0 && fee.paidAmount < fee.amount);
+                    const remainingBal = Math.max(0, (parseFloat(fee.amount) || 0) - (parseFloat(fee.paidAmount) || 0));
 
-                            <TouchableOpacity
-                                style={styles.receiptBtn}
-                                onPress={() => navigation.navigate("Receipt", {
-                                    ...fee,
-                                    studentName: student?.name || "Student",
-                                    transactionId: `TXN-${id}-${fee.id}`,
-                                    // ensure amount/date/method are passed if used in ReceiptScreen
-                                })}
-                            >
-                                <Text style={styles.receiptText}>View Receipt</Text>
-                            </TouchableOpacity>
+                    return (
+                        <View key={fee.id || index} style={styles.feeCard}>
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
+                                    <Text style={styles.feeAmount}>₹{fee.amount}</Text>
+                                    <View style={[styles.paidBadge, { backgroundColor: isPaid ? "#ECFDF5" : isPartial ? "#FEF3C7" : "#FFE4E6" }]}>
+                                        <Text style={[styles.paidText, { color: isPaid ? "#10B981" : isPartial ? "#D97706" : "#E11D48" }]}>
+                                            {isPaid ? "PAID" : isPartial ? `PARTIAL (Bal: ₹${remainingBal})` : "UNPAID"}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Text style={styles.feePlan}>{fee.plan} {fee.feeMonth ? `• ${fee.feeMonth}` : ''}</Text>
+                                <Text style={styles.feeDetail}>
+                                    {fee.paidAmount > 0 ? `Paid: ₹${fee.paidAmount} ` : ''}
+                                    {isPartial ? `| Pending: ₹${remainingBal} ` : ''}
+                                    • {fee.date || fee.dueDate || 'N/A'}
+                                </Text>
+
+                                <TouchableOpacity
+                                    style={styles.receiptBtn}
+                                    onPress={() => navigation.navigate("Receipt", {
+                                        ...fee,
+                                        studentName: student?.name || "Student",
+                                        transactionId: `TXN-${id}-${fee.id}`,
+                                    })}
+                                >
+                                    <Text style={styles.receiptText}>View Receipt</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <View style={styles.receiptIconBox}>
+                                <Icon name="receipt" size={28} color={Colors.PRIMARY} style={{ opacity: 0.6 }} />
+                            </View>
                         </View>
-                        <View style={styles.receiptIconBox}>
-                            <Icon name="receipt" size={28} color={Colors.PRIMARY} style={{ opacity: 0.6 }} />
-                        </View>
+                    );
+                })}
+
+                {/* Next Month / Cycle Continuation Card */}
+                <View style={[styles.statusToggleCard, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1 }]}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.toggleTitle, { color: '#0369A1' }]}>Next Cycle Continuation</Text>
+                        <Text style={styles.toggleSub}>
+                            {student?.autoRenewNextCycle !== false
+                                ? "Auto-renewal active for next month/quarter. Fee will generate automatically."
+                                : "Paused - Student will not be automatically billed next cycle."}
+                        </Text>
                     </View>
-                ))}
+                    <Icon
+                        name={student?.autoRenewNextCycle !== false ? "calendar-sync" : "calendar-remove"}
+                        size={28}
+                        color={student?.autoRenewNextCycle !== false ? "#0284C7" : Colors.TEXT_MUTED}
+                        style={{ marginLeft: 10 }}
+                    />
+                </View>
 
                 {/* Parent Contact */}
                 <Text style={styles.sectionTitle}>Parent Contact</Text>

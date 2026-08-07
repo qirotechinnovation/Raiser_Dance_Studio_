@@ -30,21 +30,36 @@ export default function FeeManagementScreen({ navigation }) {
         setLoading(true);
         try {
             const [pendingRes, allRes] = await Promise.all([
-                adminService.getPendingFees(),
-                adminService.getAllFees()
+                adminService.getPendingFees().catch(() => ({ data: [] })),
+                adminService.getAllFees().catch(() => ({ data: [] }))
             ]);
 
-            const today = new Date();
-            const totalCollected = allRes.data
-                .filter(f => f.status === 'PAID')
+            const allFees = Array.isArray(allRes?.data) ? allRes.data : [];
+            const pendingFeesFromBackend = Array.isArray(pendingRes?.data) ? pendingRes.data : [];
+
+            // Calculate total collected
+            const totalCollected = allFees
+                .filter(f => f && f.status === 'PAID')
                 .reduce((sum, f) => sum + (f.amount || 0), 0);
 
-            // Current dues: Unpaid fees that are due today or in the past
-            const currentDues = pendingRes.data.filter(f => 
-                f.status?.toUpperCase() !== 'PAID' && 
-                (!f.dueDate || new Date(f.dueDate) <= today)
-            );
-            const totalOutstanding = currentDues.reduce((sum, f) => sum + (f.amount || 0), 0);
+            // Compute current dues safely (UNPAID or PARTIAL fees)
+            const currentDues = allFees.filter(f => {
+                if (!f) return false;
+                const status = f.status ? f.status.toUpperCase() : 'UNPAID';
+                return status !== 'PAID';
+            });
+
+            // Include any additional pending fees returned from backend if not already present
+            pendingFeesFromBackend.forEach(pf => {
+                if (pf && !currentDues.some(f => f.id === pf.id)) {
+                    currentDues.push(pf);
+                }
+            });
+
+            const totalOutstanding = currentDues.reduce((sum, f) => {
+                const remaining = (f.amount || 0) - (f.paidAmount || 0);
+                return sum + Math.max(0, remaining);
+            }, 0);
 
             setStats({
                 collected: totalCollected,
@@ -57,9 +72,9 @@ export default function FeeManagementScreen({ navigation }) {
             if (activeTab.startsWith("Pending")) {
                 sourceData = currentDues; 
             } else if (activeTab === "History") {
-                sourceData = allRes.data.filter(f => f.status === 'PAID');
+                sourceData = allFees.filter(f => f && f.status === 'PAID');
             } else {
-                sourceData = allRes.data;
+                sourceData = allFees;
             }
 
             setRecords(sourceData);
@@ -74,7 +89,8 @@ export default function FeeManagementScreen({ navigation }) {
 
     const handleMarkPaid = (fee) => {
         setSelectedFee(fee);
-        setPaidAmount(fee.amount?.toString() || "");
+        const remaining = (fee.amount || 0) - (fee.paidAmount || 0);
+        setPaidAmount(remaining > 0 ? remaining.toString() : fee.amount?.toString() || "");
         setPaymentModalVisible(true);
     };
 
@@ -129,7 +145,14 @@ export default function FeeManagementScreen({ navigation }) {
 
     const renderFeeRecord = ({ item }) => {
         const isPaid = item.status?.toUpperCase() === 'PAID';
-        const displayStatus = isPaid ? `PAID ${item.paidDate || ''}` : `DUE ${item.dueDate || 'Soon'}`;
+        const isPartial = item.status?.toUpperCase() === 'PARTIAL' || (item.paidAmount > 0 && item.paidAmount < item.amount);
+        const remainingBal = Math.max(0, (item.amount || 0) - (item.paidAmount || 0));
+
+        let displayStatus = `DUE ${item.dueDate || 'Soon'}`;
+        if (isPaid) displayStatus = `PAID ${item.paidDate || ''}`;
+        else if (isPartial) displayStatus = `PARTIAL (Bal: ₹${remainingBal})`;
+
+        const autoRenew = item.autoRenewNextCycle !== false;
 
         return (
             <View style={styles.feeRecordCard}>
@@ -142,14 +165,25 @@ export default function FeeManagementScreen({ navigation }) {
                         <Text style={styles.planSubtitle}>
                             {item.plan} 
                             {item.student?.batch?.name ? ` • ${item.student.batch.name}` : ''} 
-                            • {displayStatus}
                         </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
+                            <View style={{ backgroundColor: isPaid ? '#DCFCE7' : isPartial ? '#FEF3C7' : '#FFE4E6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold', color: isPaid ? '#166534' : isPartial ? '#92400E' : '#9F1239' }}>
+                                    {isPaid ? 'PAID' : isPartial ? `PARTIAL (Pending: ₹${remainingBal})` : 'UNPAID'}
+                                </Text>
+                            </View>
+                            <View style={{ backgroundColor: autoRenew ? '#E0F2FE' : '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold', color: autoRenew ? '#0369A1' : '#64748B' }}>
+                                    {autoRenew ? 'Next Month: Continuing ✓' : 'Next Month: Paused'}
+                                </Text>
+                            </View>
+                        </View>
                     </View>
                     <View style={styles.priceContainer}>
                         <Text style={styles.recordPrice}>₹{item.amount}</Text>
-                        {item.paidAmount && item.paidAmount < item.amount && (
-                            <Text style={{fontSize: 12, color: Colors.TEXT_SECONDARY, marginTop: 2}}>
-                                Paid: ₹{item.paidAmount} | Bal: ₹{item.amount - item.paidAmount}
+                        {item.paidAmount > 0 && (
+                            <Text style={{fontSize: 11, color: Colors.TEXT_SECONDARY, marginTop: 2}}>
+                                Paid: ₹{item.paidAmount}
                             </Text>
                         )}
                     </View>
@@ -168,7 +202,7 @@ export default function FeeManagementScreen({ navigation }) {
                     {!isPaid ? (
                         <TouchableOpacity
                             style={styles.reminderBtn}
-                            onPress={() => Alert.alert("Send Reminder", `Send payment reminder to ${item.student?.name}?`, [
+                            onPress={() => Alert.alert("Send Reminder", `Send payment reminder for pending ₹${remainingBal} to ${item.student?.name}?`, [
                                 { text: "Cancel" },
                                 {
                                     text: "Send", onPress: async () => {
@@ -181,7 +215,7 @@ export default function FeeManagementScreen({ navigation }) {
                             ])}
                         >
                             <Icon name="bell-ring" size={16} color={Colors.WHITE} style={styles.btnIcon} />
-                            <Text style={styles.reminderBtnText}>Remind</Text>
+                            <Text style={styles.reminderBtnText}>Remind Dues</Text>
                         </TouchableOpacity>
                     ) : (
                         <View style={{ flex: 1 }} />
@@ -192,7 +226,7 @@ export default function FeeManagementScreen({ navigation }) {
                             style={[styles.moreBtn, { backgroundColor: '#DCFCE7', width: 'auto', paddingHorizontal: 15 }]}
                             onPress={() => handleMarkPaid(item)}
                         >
-                            <Text style={{ color: '#166534', fontWeight: 'bold' }}>Pay</Text>
+                            <Text style={{ color: '#166534', fontWeight: 'bold' }}>{isPartial ? 'Pay Bal' : 'Pay'}</Text>
                         </TouchableOpacity>
                     )}
 
