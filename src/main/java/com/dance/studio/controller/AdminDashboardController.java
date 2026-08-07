@@ -87,7 +87,7 @@ public class AdminDashboardController {
             Double pendingAmount = 0.0;
             if (pendingFeesList != null) {
                 pendingAmount = pendingFeesList.stream()
-                        .filter(f -> f != null && f.getAmount() != null)
+                        .filter(f -> f != null)
                         .mapToDouble(Fee::getAmount)
                         .sum();
             }
