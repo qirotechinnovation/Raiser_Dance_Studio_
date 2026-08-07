@@ -39,7 +39,7 @@ export default function FeeManagementScreen({ navigation }) {
 
             // Calculate total collected
             const totalCollected = allFees
-                .filter(f => f && f.status === 'PAID')
+                .filter(f => f && f.status?.toUpperCase() === 'PAID')
                 .reduce((sum, f) => sum + (f.amount || 0), 0);
 
             // Compute current dues safely (UNPAID or PARTIAL fees)
@@ -69,10 +69,10 @@ export default function FeeManagementScreen({ navigation }) {
 
             // Store records based on active tab
             let sourceData = [];
-            if (activeTab.startsWith("Pending")) {
+            if (activeTab === "Pending" || activeTab.startsWith("Pending")) {
                 sourceData = currentDues; 
             } else if (activeTab === "History") {
-                sourceData = allFees.filter(f => f && f.status === 'PAID');
+                sourceData = allFees.filter(f => f && f.status?.toUpperCase() === 'PAID');
             } else {
                 sourceData = allFees;
             }
@@ -250,6 +250,7 @@ export default function FeeManagementScreen({ navigation }) {
     return (
         <BaseScreen 
             title="Fees" 
+            isScrollable={false}
             actions={[
                 { icon: 'file-document-outline', onPress: () => navigation.navigate('FeeReports'), color: Colors.PRIMARY, size: 26 },
                 { icon: 'plus', onPress: () => navigation.navigate('AddEditFee'), color: Colors.PRIMARY, size: 30 }
@@ -263,12 +264,12 @@ export default function FeeManagementScreen({ navigation }) {
             <View style={styles.tabsContainer}>
                 {["All", "Pending", "History"].map(mode => {
                     const label = mode === "Pending" ? `Pending (${stats.pendingCount})` : mode;
-                    const isActive = activeTab.startsWith(mode);
+                    const isActive = activeTab === mode || (mode === "Pending" && activeTab.startsWith("Pending"));
                     return (
                         <TouchableOpacity
                             key={mode}
                             style={[styles.tab, isActive && styles.activeTab]}
-                            onPress={() => setActiveTab(label)}
+                            onPress={() => setActiveTab(mode)}
                         >
                             <Text style={[styles.tabText, isActive && styles.activeTabText]}>{label}</Text>
                         </TouchableOpacity>
@@ -284,7 +285,8 @@ export default function FeeManagementScreen({ navigation }) {
                         data={records}
                         renderItem={renderFeeRecord}
                         keyExtractor={(item) => item.id.toString()}
-                        scrollEnabled={false}
+                        contentContainerStyle={{ paddingBottom: 50 }}
+                        showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
                             <Text style={{ textAlign: 'center', marginTop: 20, color: Colors.TEXT_MUTED }}>No records found</Text>
                         }

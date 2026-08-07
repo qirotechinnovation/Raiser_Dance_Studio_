@@ -48,69 +48,77 @@ export default function MyFees({ navigation }) {
     loadFees();
   }, [loadFees]);
 
-  const renderHistoryItem = ({ item }) => (
-    <View style={styles.historyCard}>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-        <View style={styles.historyLeft}>
-          <View style={[styles.iconBox, { backgroundColor: item.status === 'PAID' ? '#ECFDF5' : '#FFF1F2' }]}>
-            <Icon name={item.status === 'PAID' ? "check" : "clock-outline"} size={20} color={item.status === 'PAID' ? "#10B981" : "#E11D48"} />
-          </View>
-          <View style={{ marginLeft: 12, flex: 1, paddingRight: 10 }}>
-            <Text style={styles.historyTitle} numberOfLines={1}>
-              {item.feeType || item.plan || 'Monthly Fee'}
-              {item.feeMonth && item.feeMonth !== 'N/A' ? ` - ${item.feeMonth}` : ''}
-            </Text>
-            <Text style={styles.historyDate}>
-              {item.batchName ? `Batch: ${item.batchName}\n` : ''}
-              {item.date || item.dueDate} • {item.method || 'Pending'}
-            </Text>
-          </View>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.historyAmount}>₹{item.amount}</Text>
-          <Text style={[styles.viewReceipt, { color: item.status === 'PAID' ? '#10B981' : '#E11D48' }]}>{item.status === 'PAID' ? 'PAID' : 'PENDING'}</Text>
-        </View>
-      </View>
-      
-      {item.transactions && item.transactions.length > 0 && (
-        <View style={{marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9'}}>
-          <Text style={{fontSize: 12, fontWeight: 'bold', color: Colors.TEXT_SECONDARY, marginBottom: 8}}>Transactions:</Text>
-          {item.transactions.map((txn, index) => (
-            <View key={txn.id || index} style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6}}>
-              <Text style={{fontSize: 12, color: Colors.TEXT_PRIMARY}}>₹{txn.amountPaid} on {txn.paidDate}</Text>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate("Receipt", { 
-                  ...item, 
-                  paidAmount: txn.amountPaid, 
-                  date: txn.paidDate,
-                  method: txn.paymentMode,
-                  transactionId: txn.transactionId,
-                  studentName: "Me" 
-                })}
-              >
-                <Text style={{fontSize: 12, color: Colors.PRIMARY, fontWeight: 'bold'}}>View Receipt</Text>
-              </TouchableOpacity>
+  const renderHistoryItem = ({ item }) => {
+    const isPaid = item.status?.toUpperCase() === 'PAID';
+    const isPartial = item.status?.toUpperCase() === 'PARTIAL' || (item.paidAmount > 0 && item.paidAmount < item.amount);
+    const displayStatus = isPaid ? 'PAID' : isPartial ? 'PARTIAL' : 'PENDING';
+    const statusColor = isPaid ? '#10B981' : isPartial ? '#D97706' : '#E11D48';
+    const statusBg = isPaid ? '#ECFDF5' : isPartial ? '#FEF3C7' : '#FFF1F2';
+
+    return (
+      <View style={styles.historyCard}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <View style={styles.historyLeft}>
+            <View style={[styles.iconBox, { backgroundColor: statusBg }]}>
+              <Icon name={isPaid ? "check" : isPartial ? "clock-alert-outline" : "clock-outline"} size={20} color={statusColor} />
             </View>
-          ))}
-          {item.status !== 'PAID' && (
-            <Text style={{fontSize: 12, color: '#E11D48', marginTop: 4, textAlign: 'right', fontWeight: 'bold'}}>
-              Balance: ₹{item.amount - item.paidAmount}
-            </Text>
-          )}
+            <View style={{ marginLeft: 12, flex: 1, paddingRight: 10 }}>
+              <Text style={styles.historyTitle} numberOfLines={1}>
+                {item.feeType || item.plan || 'Monthly Fee'}
+                {item.feeMonth && item.feeMonth !== 'N/A' ? ` - ${item.feeMonth}` : ''}
+              </Text>
+              <Text style={styles.historyDate}>
+                {item.batchName ? `Batch: ${item.batchName}\n` : ''}
+                {item.date || item.dueDate} • {item.method || 'Pending'}
+              </Text>
+            </View>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.historyAmount}>₹{item.amount}</Text>
+            <Text style={[styles.viewReceipt, { color: statusColor }]}>{displayStatus}</Text>
+          </View>
         </View>
-      )}
-      {(!item.transactions || item.transactions.length === 0) && item.paidAmount > 0 && (
-         <View style={{marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'flex-end'}}>
-             <Text style={{fontSize: 12, color: '#E11D48', fontWeight: 'bold'}}>Balance: ₹{item.amount - item.paidAmount}</Text>
-             <TouchableOpacity 
-                onPress={() => navigation.navigate("Receipt", { ...item, studentName: "Me" })}
-              >
-                <Text style={{fontSize: 12, color: Colors.PRIMARY, fontWeight: 'bold'}}>View Receipt</Text>
-              </TouchableOpacity>
-         </View>
-      )}
-    </View>
-  );
+        
+        {item.transactions && item.transactions.length > 0 && (
+          <View style={{marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9'}}>
+            <Text style={{fontSize: 12, fontWeight: 'bold', color: Colors.TEXT_SECONDARY, marginBottom: 8}}>Transactions:</Text>
+            {item.transactions.map((txn, index) => (
+              <View key={txn.id || index} style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6}}>
+                <Text style={{fontSize: 12, color: Colors.TEXT_PRIMARY}}>₹{txn.amountPaid} on {txn.paidDate}</Text>
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate("Receipt", { 
+                    ...item, 
+                    paidAmount: txn.amountPaid, 
+                    date: txn.paidDate,
+                    method: txn.paymentMode,
+                    transactionId: txn.transactionId,
+                    studentName: "Me" 
+                  })}
+                >
+                  <Text style={{fontSize: 12, color: Colors.PRIMARY, fontWeight: 'bold'}}>View Receipt</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {!isPaid && (
+              <Text style={{fontSize: 12, color: '#E11D48', marginTop: 4, textAlign: 'right', fontWeight: 'bold'}}>
+                Balance Due: ₹{item.amount - item.paidAmount}
+              </Text>
+            )}
+          </View>
+        )}
+        {(!item.transactions || item.transactions.length === 0) && item.paidAmount > 0 && (
+           <View style={{marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'flex-end'}}>
+               <Text style={{fontSize: 12, color: '#E11D48', fontWeight: 'bold'}}>Balance Due: ₹{item.amount - item.paidAmount}</Text>
+               <TouchableOpacity 
+                  onPress={() => navigation.navigate("Receipt", { ...item, studentName: "Me" })}
+                >
+                  <Text style={{fontSize: 12, color: Colors.PRIMARY, fontWeight: 'bold'}}>View Receipt</Text>
+                </TouchableOpacity>
+           </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <BaseScreen 

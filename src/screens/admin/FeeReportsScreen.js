@@ -41,25 +41,35 @@ export default function FeeReportsScreen({ navigation }) {
             let outstanding = 0;
             const pendingArr = [];
 
+            const parseDateParts = (dateStr) => {
+                if (!dateStr) return null;
+                if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                    const parts = dateStr.split('-');
+                    if (parts.length >= 3) {
+                        return { year: parseInt(parts[0], 10), month: parseInt(parts[1], 10) - 1 };
+                    }
+                }
+                const d = new Date(dateStr);
+                return isNaN(d.getTime()) ? null : { year: d.getFullYear(), month: d.getMonth() };
+            };
+
             allFees.forEach(fee => {
                 const isPaid = fee.status?.toUpperCase() === 'PAID';
                 
                 if (isPaid && fee.paidDate) {
-                    const d = new Date(fee.paidDate);
-                    if (d.getMonth() === monthIndex && d.getFullYear() === parseInt(selectedYear)) {
+                    const dp = parseDateParts(fee.paidDate);
+                    if (dp && dp.month === monthIndex && dp.year === parseInt(selectedYear)) {
                         collected += (fee.amount || 0);
                     }
                 } else if (!isPaid) {
-                    // It's pending. Check if it's due in this month or earlier, or if feeMonth matches.
-                    // For simplicity, let's include if it was due in this selected month.
                     if (fee.dueDate) {
-                        const d = new Date(fee.dueDate);
-                        if (d.getMonth() === monthIndex && d.getFullYear() === parseInt(selectedYear)) {
+                        const dp = parseDateParts(fee.dueDate);
+                        if (dp && dp.month === monthIndex && dp.year === parseInt(selectedYear)) {
                             const balance = (fee.amount || 0) - (fee.paidAmount || 0);
                             outstanding += balance;
                             pendingArr.push({ ...fee, balance });
                         }
-                    } else if (fee.feeMonth && fee.feeMonth.includes(selectedMonth) && fee.feeMonth.includes(selectedYear)) {
+                    } else if (fee.feeMonth && fee.feeMonth.toLowerCase().includes(selectedMonth.toLowerCase()) && fee.feeMonth.includes(selectedYear)) {
                         const balance = (fee.amount || 0) - (fee.paidAmount || 0);
                         outstanding += balance;
                         pendingArr.push({ ...fee, balance });
