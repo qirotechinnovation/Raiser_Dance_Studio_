@@ -16,9 +16,9 @@ public class ClassSchedule {
     private String endTime; // "11:00 AM"
     private String activity; // "Salsa Basics"
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "batch_id", nullable = false)
-    @JsonIgnoreProperties({ "schedule", "students", "enrollments" })
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "schedule", "students", "enrollments" })
     private Batch batch;
 
     public ClassSchedule() {
