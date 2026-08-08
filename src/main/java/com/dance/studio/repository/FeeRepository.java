@@ -38,9 +38,9 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
 
 	Fee findTopByReceiptNoIsNotNullOrderByReceiptNoDesc();
 
-	@Query("SELECT f FROM Fee f WHERE UPPER(f.status) != 'PAID'")
+	@Query("SELECT f FROM Fee f WHERE f.status IS NULL OR UPPER(f.status) != 'PAID'")
 	List<Fee> findAllPendingOrPartialFees();
 
-	@Query("SELECT f FROM Fee f WHERE UPPER(f.status) != 'PAID' AND f.dueDate <= :date")
+	@Query("SELECT f FROM Fee f WHERE (f.status IS NULL OR UPPER(f.status) != 'PAID') AND f.dueDate <= :date")
 	List<Fee> findPendingOrPartialFeesDueOnOrBefore(LocalDate date);
 }

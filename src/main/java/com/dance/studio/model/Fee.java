@@ -11,15 +11,15 @@ public class Fee {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private double amount;
-	private double discountPercent;
+	private Double amount = 0.0;
+	private Double discountPercent = 0.0;
 	private String plan;
 	private String status;
 	private String feeType; // ADMISSION or MONTHLY
 	private String feeMonth; // e.g. "January 2024"
 	private String batchName; // ✅ NEW
 	private Double paidAmount = 0.0; // ✅ NEW for partial payments
-	private boolean autoRenewNextCycle = true; // ✅ NEW for next month/cycle continuation
+	private Boolean autoRenewNextCycle = true; // ✅ NEW for next month/cycle continuation
 
 	private LocalDate dueDate;
 	private LocalDate paidDate;
@@ -43,7 +43,7 @@ public class Fee {
 	}
 
 	public double getAmount() {
-		return amount;
+		return amount != null ? amount : 0.0;
 	}
 
 	public void setAmount(double amount) {
@@ -51,7 +51,7 @@ public class Fee {
 	}
 
 	public double getDiscountPercent() {
-		return discountPercent;
+		return discountPercent != null ? discountPercent : 0.0;
 	}
 
 	public void setDiscountPercent(double discountPercent) {
@@ -195,10 +195,10 @@ public class Fee {
 	}
 
 	public boolean isAutoRenewNextCycle() {
-		return autoRenewNextCycle;
+		return autoRenewNextCycle != null ? autoRenewNextCycle : true;
 	}
 
-	public void setAutoRenewNextCycle(boolean autoRenewNextCycle) {
-		this.autoRenewNextCycle = autoRenewNextCycle;
+	public void setAutoRenewNextCycle(Boolean autoRenewNextCycle) {
+		this.autoRenewNextCycle = autoRenewNextCycle != null ? autoRenewNextCycle : true;
 	}
 }
