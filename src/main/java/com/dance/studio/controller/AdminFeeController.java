@@ -138,10 +138,14 @@ public class AdminFeeController {
                     } else {
                         // Auto-correct UNPAID future cycle fee records that incorrectly copied 200.0 ADMISSION fee
                         for (Fee f : existing) {
-                            if ("UNPAID".equalsIgnoreCase(f.getStatus()) && f.getAmount() <= 200.0) {
-                                f.setAmount(1600.0);
-                                f.setFeeType("Monthly Fee");
-                                feeRepo.save(f);
+                            if ("UNPAID".equalsIgnoreCase(f.getStatus())) {
+                                if (f.getAmount() <= 200.0 || "ADMISSION".equalsIgnoreCase(f.getFeeType())) {
+                                    double targetAmt = "Quarterly".equalsIgnoreCase(f.getPlan()) ? 3500.0 : 1600.0;
+                                    String targetType = "Quarterly".equalsIgnoreCase(f.getPlan()) ? "Quarterly Fee" : "Monthly Fee";
+                                    f.setAmount(targetAmt);
+                                    f.setFeeType(targetType);
+                                    feeRepo.save(f);
+                                }
                             }
                         }
                     }
