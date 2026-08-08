@@ -60,15 +60,74 @@ public class AdminFeeController {
         return saved;
     }
 
-    // ✅ GET FEES OF STUDENT
+    // ✅ GET FEES OF STUDENT (With Auto-Generation if missing)
     @GetMapping("/student/{studentId}")
     public List<Fee> getStudentFees(@PathVariable Long studentId) {
-        return feeRepo.findByStudentId(studentId);
+        List<Fee> list = feeRepo.findByStudentId(studentId);
+        if (list.isEmpty()) {
+            Student student = studentRepo.findById(studentId).orElse(null);
+            if (student != null) {
+                double amount = student.getAdmissionFee() > 0 ? student.getAdmissionFee() : 1600.0;
+                String plan = student.getFeePlan() != null ? student.getFeePlan() : "MONTHLY";
+                String currentMonth = LocalDate.now().getMonth().name();
+                currentMonth = currentMonth.substring(0, 1).toUpperCase() + currentMonth.substring(1).toLowerCase() + " " + LocalDate.now().getYear();
+
+                Fee autoFee = new Fee();
+                autoFee.setStudent(student);
+                autoFee.setAmount(amount);
+                autoFee.setPlan(plan);
+                autoFee.setFeeType("ADMISSION");
+                autoFee.setStatus("UNPAID");
+                autoFee.setFeeMonth(currentMonth);
+                autoFee.setDueDate(student.getJoiningDate() != null ? student.getJoiningDate().plusMonths(1) : LocalDate.now());
+                if (student.getBatch() != null) {
+                    autoFee.setBatchName(student.getBatch().getName());
+                }
+
+                Fee saved = feeRepo.save(autoFee);
+                student.setTotalOutstanding(amount);
+                studentRepo.save(student);
+
+                return List.of(saved);
+            }
+        }
+        return list;
     }
 
-    // ✅ GET ALL FEES
+    // ✅ GET ALL FEES (With Auto-Generation for Students Missing Fee Records)
     @GetMapping
     public List<Fee> getAllFees() {
+        try {
+            List<Student> allStudents = studentRepo.findAll();
+            for (Student s : allStudents) {
+                if (s != null && s.getId() != null) {
+                    List<Fee> existing = feeRepo.findByStudentId(s.getId());
+                    if (existing.isEmpty()) {
+                        double amount = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 1600.0;
+                        String plan = s.getFeePlan() != null ? s.getFeePlan() : "Monthly";
+                        String month = LocalDate.now().getMonth().name();
+                        month = month.substring(0, 1).toUpperCase() + month.substring(1).toLowerCase() + " " + LocalDate.now().getYear();
+
+                        Fee autoFee = new Fee();
+                        autoFee.setStudent(s);
+                        autoFee.setAmount(amount);
+                        autoFee.setPlan(plan);
+                        autoFee.setFeeType("ADMISSION");
+                        autoFee.setStatus("UNPAID");
+                        autoFee.setFeeMonth(month);
+                        autoFee.setDueDate(s.getJoiningDate() != null ? s.getJoiningDate().plusMonths(1) : LocalDate.now());
+                        if (s.getBatch() != null) {
+                            autoFee.setBatchName(s.getBatch().getName());
+                        }
+                        feeRepo.save(autoFee);
+                        s.setTotalOutstanding(amount);
+                        studentRepo.save(s);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error auto-generating missing fees: " + e.getMessage());
+        }
         return feeRepo.findAll();
     }
 
