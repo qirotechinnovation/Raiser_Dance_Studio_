@@ -136,19 +136,12 @@ public class AdminFeeController {
                         }
                         feeRepo.save(autoFee);
                     } else {
-                        // Check if student has 0.0 totalOutstanding or PAID status, but existing fee is marked UNPAID
-                        if (hasPaidAlready) {
-                            for (Fee f : existing) {
-                                if ("UNPAID".equalsIgnoreCase(f.getStatus())) {
-                                    f.setStatus("PAID");
-                                    f.setPaidAmount(f.getAmount() > 0 ? f.getAmount() : 1600.0);
-                                    f.setPaidDate(s.getJoiningDate() != null ? s.getJoiningDate() : LocalDate.now());
-                                    f.setPaymentMode("ONLINE");
-                                    if (f.getReceiptNo() == null) {
-                                        f.setReceiptNo("RDS-" + (1000 + s.getId()));
-                                    }
-                                    feeRepo.save(f);
-                                }
+                        // Auto-correct UNPAID future cycle fee records that incorrectly copied 200.0 ADMISSION fee
+                        for (Fee f : existing) {
+                            if ("UNPAID".equalsIgnoreCase(f.getStatus()) && f.getAmount() <= 200.0) {
+                                f.setAmount(1600.0);
+                                f.setFeeType("Monthly Fee");
+                                feeRepo.save(f);
                             }
                         }
                     }
@@ -301,9 +294,16 @@ public class AdminFeeController {
                     nextMonthName = m.substring(0, 1).toUpperCase() + m.substring(1).toLowerCase() + " " + nextDueDate.getYear();
                 }
 
+                double nextAmount = (fee.getAmount() != null && fee.getAmount() > 200.0) ? fee.getAmount() : 1600.0;
+                String nextFeeType = "Monthly Fee";
+                if (fee.getPlan() != null && fee.getPlan().equalsIgnoreCase("Quarterly")) {
+                    nextFeeType = "Quarterly Fee";
+                    if (nextAmount <= 200.0) nextAmount = 3500.0;
+                }
+
                 // Auto-generate next fee record as UNPAID for student who is continuing
-                Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
-                        fee.getPlan(), "UNPAID", fee.getFeeType(), nextMonthName, nextDueDate,
+                Fee nextFee = new Fee(null, nextAmount, fee.getDiscountPercent(),
+                        fee.getPlan(), "UNPAID", nextFeeType, nextMonthName, nextDueDate,
                         null, student, null, null, null, null, null);
                 nextFee.setBatchName(fee.getBatchName());
                 nextFee.setAutoRenewNextCycle(true);
