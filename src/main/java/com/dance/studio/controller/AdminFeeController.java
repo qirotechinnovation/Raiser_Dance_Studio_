@@ -112,19 +112,22 @@ public class AdminFeeController {
                         ("PAID".equalsIgnoreCase(s.getRegistrationFeeStatus()));
 
                     if (existing.isEmpty()) {
-                        double amount = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 1600.0;
+                        double admissionFee = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 200.0;
+                        double planAmount = "Quarterly".equalsIgnoreCase(s.getFeePlan()) ? 3500.0 : 1400.0;
+                        double totalFirstMonthAmount = admissionFee + planAmount; // ₹200 + ₹1,400 = ₹1,600
+
                         String plan = s.getFeePlan() != null ? s.getFeePlan() : "Monthly";
                         String month = LocalDate.now().getMonth().name();
                         month = month.substring(0, 1).toUpperCase() + month.substring(1).toLowerCase() + " " + LocalDate.now().getYear();
 
                         Fee autoFee = new Fee();
                         autoFee.setStudent(s);
-                        autoFee.setAmount(amount);
+                        autoFee.setAmount(totalFirstMonthAmount);
                         autoFee.setPlan(plan);
-                        autoFee.setFeeType("ADMISSION");
+                        autoFee.setFeeType("ADMISSION + PLAN");
                         autoFee.setStatus(hasPaidAlready ? "PAID" : "UNPAID");
                         if (hasPaidAlready) {
-                            autoFee.setPaidAmount(amount);
+                            autoFee.setPaidAmount(totalFirstMonthAmount);
                             autoFee.setPaidDate(s.getJoiningDate() != null ? s.getJoiningDate() : LocalDate.now());
                             autoFee.setPaymentMode("ONLINE");
                             autoFee.setReceiptNo("RDS-" + (1000 + s.getId()));
