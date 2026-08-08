@@ -72,12 +72,21 @@ public class AdminFeeController {
                 String currentMonth = LocalDate.now().getMonth().name();
                 currentMonth = currentMonth.substring(0, 1).toUpperCase() + currentMonth.substring(1).toLowerCase() + " " + LocalDate.now().getYear();
 
+                boolean hasPaidAlready = (student.getTotalOutstanding() != null && student.getTotalOutstanding() == 0.0) || 
+                    ("PAID".equalsIgnoreCase(student.getRegistrationFeeStatus()));
+
                 Fee autoFee = new Fee();
                 autoFee.setStudent(student);
                 autoFee.setAmount(amount);
                 autoFee.setPlan(plan);
                 autoFee.setFeeType("ADMISSION");
-                autoFee.setStatus("UNPAID");
+                autoFee.setStatus(hasPaidAlready ? "PAID" : "UNPAID");
+                if (hasPaidAlready) {
+                    autoFee.setPaidAmount(amount);
+                    autoFee.setPaidDate(student.getJoiningDate() != null ? student.getJoiningDate() : LocalDate.now());
+                    autoFee.setPaymentMode("ONLINE");
+                    autoFee.setReceiptNo("RDS-" + (1000 + student.getId()));
+                }
                 autoFee.setFeeMonth(currentMonth);
                 autoFee.setDueDate(student.getJoiningDate() != null ? student.getJoiningDate().plusMonths(1) : LocalDate.now());
                 if (student.getBatch() != null) {
@@ -85,16 +94,13 @@ public class AdminFeeController {
                 }
 
                 Fee saved = feeRepo.save(autoFee);
-                student.setTotalOutstanding(amount);
-                studentRepo.save(student);
-
                 return List.of(saved);
             }
         }
         return list;
     }
 
-    // ✅ GET ALL FEES (With Auto-Generation for Students Missing Fee Records)
+    // ✅ GET ALL FEES (With Auto-Generation & Auto-Heal for Paid Students)
     @GetMapping
     public List<Fee> getAllFees() {
         try {
@@ -102,6 +108,9 @@ public class AdminFeeController {
             for (Student s : allStudents) {
                 if (s != null && s.getId() != null) {
                     List<Fee> existing = feeRepo.findByStudentId(s.getId());
+                    boolean hasPaidAlready = (s.getTotalOutstanding() != null && s.getTotalOutstanding() == 0.0) || 
+                        ("PAID".equalsIgnoreCase(s.getRegistrationFeeStatus()));
+
                     if (existing.isEmpty()) {
                         double amount = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 1600.0;
                         String plan = s.getFeePlan() != null ? s.getFeePlan() : "Monthly";
@@ -113,15 +122,35 @@ public class AdminFeeController {
                         autoFee.setAmount(amount);
                         autoFee.setPlan(plan);
                         autoFee.setFeeType("ADMISSION");
-                        autoFee.setStatus("UNPAID");
+                        autoFee.setStatus(hasPaidAlready ? "PAID" : "UNPAID");
+                        if (hasPaidAlready) {
+                            autoFee.setPaidAmount(amount);
+                            autoFee.setPaidDate(s.getJoiningDate() != null ? s.getJoiningDate() : LocalDate.now());
+                            autoFee.setPaymentMode("ONLINE");
+                            autoFee.setReceiptNo("RDS-" + (1000 + s.getId()));
+                        }
                         autoFee.setFeeMonth(month);
                         autoFee.setDueDate(s.getJoiningDate() != null ? s.getJoiningDate().plusMonths(1) : LocalDate.now());
                         if (s.getBatch() != null) {
                             autoFee.setBatchName(s.getBatch().getName());
                         }
                         feeRepo.save(autoFee);
-                        s.setTotalOutstanding(amount);
-                        studentRepo.save(s);
+                    } else {
+                        // Check if student has 0.0 totalOutstanding or PAID status, but existing fee is marked UNPAID
+                        if (hasPaidAlready) {
+                            for (Fee f : existing) {
+                                if ("UNPAID".equalsIgnoreCase(f.getStatus())) {
+                                    f.setStatus("PAID");
+                                    f.setPaidAmount(f.getAmount() > 0 ? f.getAmount() : 1600.0);
+                                    f.setPaidDate(s.getJoiningDate() != null ? s.getJoiningDate() : LocalDate.now());
+                                    f.setPaymentMode("ONLINE");
+                                    if (f.getReceiptNo() == null) {
+                                        f.setReceiptNo("RDS-" + (1000 + s.getId()));
+                                    }
+                                    feeRepo.save(f);
+                                }
+                            }
+                        }
                     }
                 }
             }
