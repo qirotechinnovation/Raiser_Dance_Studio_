@@ -298,7 +298,7 @@ public class AdminFeeController {
                     nextMonthName = m.substring(0, 1).toUpperCase() + m.substring(1).toLowerCase() + " " + nextDueDate.getYear();
                 }
 
-                double nextAmount = (fee.getAmount() != null && fee.getAmount() > 200.0) ? fee.getAmount() : 1600.0;
+                double nextAmount = (fee.getAmount() > 200.0) ? fee.getAmount() : 1600.0;
                 String nextFeeType = "Monthly Fee";
                 if (fee.getPlan() != null && fee.getPlan().equalsIgnoreCase("Quarterly")) {
                     nextFeeType = "Quarterly Fee";
