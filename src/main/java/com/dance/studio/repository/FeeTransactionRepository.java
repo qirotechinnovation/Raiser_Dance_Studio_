@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface FeeTransactionRepository extends JpaRepository<FeeTransaction, Long> {
     List<FeeTransaction> findByFeeId(Long feeId);
+    List<FeeTransaction> findByFeeStudentId(Long studentId);
 }

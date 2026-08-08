@@ -293,6 +293,24 @@ public class AdminFeeController {
         return saved;
     }
 
+    // ✅ GET ALL INDIVIDUAL TRANSACTIONS
+    @GetMapping("/transactions/all")
+    public List<FeeTransaction> getAllTransactions() {
+        return feeTransactionRepo.findAll();
+    }
+
+    // ✅ GET TRANSACTIONS FOR A FEE
+    @GetMapping("/{feeId}/transactions")
+    public List<FeeTransaction> getTransactionsByFee(@PathVariable Long feeId) {
+        return feeTransactionRepo.findByFeeId(feeId);
+    }
+
+    // ✅ GET TRANSACTIONS FOR A STUDENT
+    @GetMapping("/student/{studentId}/transactions")
+    public List<FeeTransaction> getTransactionsByStudent(@PathVariable Long studentId) {
+        return feeTransactionRepo.findByFeeStudentId(studentId);
+    }
+
     private LocalDate calculateNextDueDate(LocalDate current, String plan) {
         if (current == null)
             current = LocalDate.now();
