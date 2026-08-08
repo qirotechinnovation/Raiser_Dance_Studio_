@@ -91,6 +91,11 @@ public class AdminStudentController {
             fee.setFeeType("ADMISSION");
             fee.setStatus("UNPAID");
             fee.setDueDate(java.time.LocalDate.now().plusMonths(1));
+            
+            String currentMonthName = java.time.LocalDate.now().getMonth().name();
+            currentMonthName = currentMonthName.substring(0, 1).toUpperCase() + currentMonthName.substring(1).toLowerCase() + " " + java.time.LocalDate.now().getYear();
+            fee.setFeeMonth(currentMonthName);
+
             if (savedStudent.getBatch() != null) {
                 fee.setBatchName(savedStudent.getBatch().getName());
             }

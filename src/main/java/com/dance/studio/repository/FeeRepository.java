@@ -18,15 +18,15 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
 	boolean existsByStudentIdAndStatus(Long studentId, String status);
 
 	@Query("""
-			   SELECT COALESCE(SUM(f.amount), 0.0)
+			   SELECT COALESCE(SUM(COALESCE(f.paidAmount, f.amount)), 0.0)
 			   FROM Fee f
-			   WHERE f.status='PAID'
+			   WHERE UPPER(f.status) = 'PAID'
 			   AND MONTH(f.paidDate)=:month
 			   AND YEAR(f.paidDate)=:year
 			""")
 	Double sumPaidFeesForMonth(int month, int year);
 
-	@Query("SELECT COALESCE(SUM(f.amount), 0.0) FROM Fee f WHERE f.status='PAID'")
+	@Query("SELECT COALESCE(SUM(COALESCE(f.paidAmount, f.amount)), 0.0) FROM Fee f WHERE UPPER(f.status) = 'PAID'")
 	Double sumAllPaidFees();
 
 	long countByStatus(String status);

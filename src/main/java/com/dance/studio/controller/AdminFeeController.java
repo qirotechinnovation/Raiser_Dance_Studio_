@@ -206,9 +206,16 @@ public class AdminFeeController {
             studentRepo.save(student);
 
             if ("PAID".equalsIgnoreCase(saved.getStatus()) && saved.isAutoRenewNextCycle()) {
+                LocalDate nextDueDate = calculateNextDueDate(fee.getDueDate(), fee.getPlan());
+                String nextMonthName = fee.getFeeMonth();
+                if (nextDueDate != null) {
+                    String m = nextDueDate.getMonth().name();
+                    nextMonthName = m.substring(0, 1).toUpperCase() + m.substring(1).toLowerCase() + " " + nextDueDate.getYear();
+                }
+
                 // Auto-generate next fee record as UNPAID for student who is continuing
                 Fee nextFee = new Fee(null, fee.getAmount(), fee.getDiscountPercent(),
-                        fee.getPlan(), "UNPAID", fee.getFeeType(), fee.getFeeMonth(), calculateNextDueDate(fee.getDueDate(), fee.getPlan()),
+                        fee.getPlan(), "UNPAID", fee.getFeeType(), nextMonthName, nextDueDate,
                         null, student, null, null, null, null, null);
                 nextFee.setBatchName(fee.getBatchName());
                 nextFee.setAutoRenewNextCycle(true);
