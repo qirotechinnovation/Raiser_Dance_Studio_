@@ -109,10 +109,17 @@ public class AdminFeeController {
                 if (s != null && s.getId() != null) {
                     List<Fee> existing = feeRepo.findByStudentId(s.getId());
                     boolean hasPaidAlready = (s.getTotalOutstanding() != null && s.getTotalOutstanding() == 0.0) || 
-                        ("PAID".equalsIgnoreCase(s.getRegistrationFeeStatus()));
+                        ("PAID".equalsIgnoreCase(s.getRegistrationFeeStatus())) ||
+                        s.isActive();
+
+                    if (hasPaidAlready) {
+                        s.setRegistrationFeeStatus("PAID");
+                        s.setTotalOutstanding(0.0);
+                        studentRepo.save(s);
+                    }
 
                     if (existing.isEmpty()) {
-                        double amount = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 1600.0;
+                        double amount = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 200.0;
                         String plan = s.getFeePlan() != null ? s.getFeePlan() : "Monthly";
                         String month = LocalDate.now().getMonth().name();
                         month = month.substring(0, 1).toUpperCase() + month.substring(1).toLowerCase() + " " + LocalDate.now().getYear();
