@@ -112,22 +112,19 @@ public class AdminFeeController {
                         ("PAID".equalsIgnoreCase(s.getRegistrationFeeStatus()));
 
                     if (existing.isEmpty()) {
-                        double admissionFee = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 200.0;
-                        double planAmount = "Quarterly".equalsIgnoreCase(s.getFeePlan()) ? 3500.0 : 1400.0;
-                        double totalFirstMonthAmount = admissionFee + planAmount; // ₹200 + ₹1,400 = ₹1,600
-
+                        double amount = s.getAdmissionFee() > 0 ? s.getAdmissionFee() : 1600.0;
                         String plan = s.getFeePlan() != null ? s.getFeePlan() : "Monthly";
                         String month = LocalDate.now().getMonth().name();
                         month = month.substring(0, 1).toUpperCase() + month.substring(1).toLowerCase() + " " + LocalDate.now().getYear();
 
                         Fee autoFee = new Fee();
                         autoFee.setStudent(s);
-                        autoFee.setAmount(totalFirstMonthAmount);
+                        autoFee.setAmount(amount);
                         autoFee.setPlan(plan);
-                        autoFee.setFeeType("ADMISSION + PLAN");
+                        autoFee.setFeeType("ADMISSION");
                         autoFee.setStatus(hasPaidAlready ? "PAID" : "UNPAID");
                         if (hasPaidAlready) {
-                            autoFee.setPaidAmount(totalFirstMonthAmount);
+                            autoFee.setPaidAmount(amount);
                             autoFee.setPaidDate(s.getJoiningDate() != null ? s.getJoiningDate() : LocalDate.now());
                             autoFee.setPaymentMode("ONLINE");
                             autoFee.setReceiptNo("RDS-" + (1000 + s.getId()));
@@ -139,16 +136,16 @@ public class AdminFeeController {
                         }
                         feeRepo.save(autoFee);
                     } else {
-                        // Auto-correct UNPAID future cycle fee records that incorrectly copied 200.0 ADMISSION fee
                         for (Fee f : existing) {
-                            if ("UNPAID".equalsIgnoreCase(f.getStatus())) {
-                                if (f.getAmount() <= 200.0 || "ADMISSION".equalsIgnoreCase(f.getFeeType())) {
-                                    double targetAmt = "Quarterly".equalsIgnoreCase(f.getPlan()) ? 3500.0 : 1600.0;
-                                    String targetType = "Quarterly".equalsIgnoreCase(f.getPlan()) ? "Quarterly Fee" : "Monthly Fee";
-                                    f.setAmount(targetAmt);
-                                    f.setFeeType(targetType);
-                                    feeRepo.save(f);
+                            if (hasPaidAlready && ("ADMISSION".equalsIgnoreCase(f.getFeeType()) || f.getAmount() <= 200.0) && "UNPAID".equalsIgnoreCase(f.getStatus())) {
+                                f.setStatus("PAID");
+                                f.setPaidAmount(f.getAmount() > 0 ? f.getAmount() : 200.0);
+                                f.setPaidDate(s.getJoiningDate() != null ? s.getJoiningDate() : LocalDate.now());
+                                f.setPaymentMode("ONLINE");
+                                if (f.getReceiptNo() == null) {
+                                    f.setReceiptNo("RDS-" + (1000 + s.getId()));
                                 }
+                                feeRepo.save(f);
                             }
                         }
                     }
@@ -158,6 +155,32 @@ public class AdminFeeController {
             System.err.println("Error auto-generating missing fees: " + e.getMessage());
         }
         return feeRepo.findAll();
+    }
+
+    // ✅ MARK ADMISSION FEE AS PAID FOR A STUDENT
+    @PutMapping("/student/{studentId}/pay-admission")
+    public Student markAdmissionFeePaid(@PathVariable Long studentId) {
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        student.setRegistrationFeeStatus("PAID");
+        student.setTotalOutstanding(0.0);
+        Student savedStudent = studentRepo.save(student);
+
+        List<Fee> fees = feeRepo.findByStudentId(studentId);
+        for (Fee f : fees) {
+            if ("ADMISSION".equalsIgnoreCase(f.getFeeType()) || f.getAmount() <= 200.0) {
+                f.setStatus("PAID");
+                f.setPaidAmount(f.getAmount() > 0 ? f.getAmount() : 200.0);
+                f.setPaidDate(LocalDate.now());
+                f.setPaymentMode("CASH");
+                if (f.getReceiptNo() == null) {
+                    f.setReceiptNo("RDS-" + (1000 + studentId));
+                }
+                feeRepo.save(f);
+            }
+        }
+        return savedStudent;
     }
 
     // ✅ GET FEE BY ID
