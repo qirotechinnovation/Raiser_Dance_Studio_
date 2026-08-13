@@ -247,7 +247,7 @@ public class AdminFeeController {
     // ✅ DELETE FEE
     @DeleteMapping("/{id}")
     @org.springframework.transaction.annotation.Transactional
-    public String deleteFee(@PathVariable Long id) {
+    public org.springframework.http.ResponseEntity<?> deleteFee(@PathVariable Long id) {
         Fee fee = feeRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fee record not found"));
 
@@ -267,7 +267,7 @@ public class AdminFeeController {
         }
 
         feeRepo.delete(fee);
-        return "Fee record deleted successfully";
+        return org.springframework.http.ResponseEntity.ok(java.util.Collections.singletonMap("message", "Fee record deleted successfully"));
     }
 
     // ✅ MARK FEE AS PAID with DETAILS
