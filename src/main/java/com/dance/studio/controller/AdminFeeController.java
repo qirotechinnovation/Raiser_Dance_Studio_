@@ -246,17 +246,27 @@ public class AdminFeeController {
 
     // ✅ DELETE FEE
     @DeleteMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public String deleteFee(@PathVariable Long id) {
         Fee fee = feeRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fee record not found"));
 
         Student student = fee.getStudent();
-        if (student != null && "UNPAID".equalsIgnoreCase(fee.getStatus())) {
-            student.setTotalOutstanding(Math.max(0, student.getTotalOutstanding() - fee.getAmount()));
-            studentRepo.save(student);
+        if (student != null) {
+            double remainingUnpaid = Math.max(0, fee.getAmount() - (fee.getPaidAmount() != null ? fee.getPaidAmount() : 0));
+            if (remainingUnpaid > 0) {
+                student.setTotalOutstanding(Math.max(0, student.getTotalOutstanding() - remainingUnpaid));
+                studentRepo.save(student);
+            }
         }
 
-        feeRepo.deleteById(id);
+        // Clean up linked transactions first to prevent foreign key constraint issues
+        List<FeeTransaction> txns = feeTransactionRepo.findByFeeId(id);
+        if (txns != null && !txns.isEmpty()) {
+            feeTransactionRepo.deleteAll(txns);
+        }
+
+        feeRepo.delete(fee);
         return "Fee record deleted successfully";
     }
 
